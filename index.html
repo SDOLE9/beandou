@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>拼豆计时管理系统</title>
+<link rel="stylesheet" href="styles.css?v=3">
+<link rel="manifest" href="manifest-v1.webmanifest">
+<meta name="theme-color" content="#e7ecf5">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="拼豆计时">
+<link rel="apple-touch-icon" href="icon.jpg">
+</head>
+<body>
+<div id="app">
+  <!-- 顶部栏 -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="logo">🫘 拼豆计时管理系统</span>
+      <span id="shopName" class="shop-name"></span>
+    </div>
+    <div class="topbar-center">
+      <span id="clock" class="clock"></span>
+    </div>
+    <div class="topbar-right">
+      <span id="todaySummary" class="today-summary"></span>
+    </div>
+  </header>
+
+  <!-- 导航 -->
+  <nav class="nav">
+    <button class="nav-btn active" data-view="dashboard">桌台看板</button>
+    <button class="nav-btn" data-view="sales">每日销售记录</button>
+    <button class="nav-btn" data-view="storage">储存管理</button>
+    <button class="nav-btn" data-view="settings">系统设置</button>
+  </nav>
+
+  <!-- 视图容器 -->
+  <main id="view-container">
+    <!-- 桌台看板 -->
+    <section id="view-dashboard" class="view active">
+      <div class="dashboard-toolbar">
+        <div class="filter-group">
+          <label>区域筛选：</label>
+          <select id="areaFilter"></select>
+        </div>
+        <div class="filter-group">
+          <label>状态筛选：</label>
+          <select id="statusFilter">
+            <option value="all">全部</option>
+            <option value="idle">空闲</option>
+            <option value="running">使用中</option>
+            <option value="paused">已暂停</option>
+            <option value="overtime">超时</option>
+          </select>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><i class="dot idle"></i>空闲</span>
+          <span class="legend-item"><i class="dot running"></i>使用中</span>
+          <span class="legend-item"><i class="dot paused"></i>暂停</span>
+          <span class="legend-item"><i class="dot overtime"></i>超时</span>
+        </div>
+      </div>
+      <div id="tableBoard" class="table-board"></div>
+    </section>
+
+    <!-- 销售记录 -->
+    <section id="view-sales" class="view">
+      <div class="sales-toolbar">
+        <div class="filter-group">
+          <label>日期：</label>
+          <input type="date" id="salesDateFilter" class="date-input">
+        </div>
+        <button class="btn btn-secondary" id="salesPrevDay">前一天</button>
+        <button class="btn btn-secondary" id="salesToday">今天</button>
+        <button class="btn btn-secondary" id="salesNextDay">后一天</button>
+        <button class="btn btn-primary" id="exportSales">导出CSV</button>
+      </div>
+      <div id="salesSummary" class="sales-summary"></div>
+      <div class="table-wrap">
+        <table id="salesTable" class="data-table">
+          <thead>
+            <tr>
+              <th>序号</th><th>结账时间</th><th>桌台</th><th>顾客</th>
+              <th>时长</th><th>计时费</th><th>附加消费</th><th>合计</th>
+              <th>支付方式</th><th>备注</th>
+            </tr>
+          </thead>
+          <tbody id="salesTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 储存管理 -->
+    <section id="view-storage" class="view">
+      <div class="storage-toolbar">
+        <button class="btn btn-primary" id="addStorage">+ 新增储存记录</button>
+        <div class="filter-group">
+          <label>状态：</label>
+          <select id="storageFilter">
+            <option value="all">全部</option>
+            <option value="stored">储存中</option>
+            <option value="picked">已取走</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table id="storageTable" class="data-table">
+          <thead>
+            <tr>
+              <th>序号</th><th>顾客</th><th>联系方式</th><th>作品名称</th>
+              <th>储存日期</th><th>预计取走</th><th>已存天数</th><th>状态</th><th>备注</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="storageTbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 系统设置 -->
+    <section id="view-settings" class="view">
+      <div class="settings-grid">
+        <div class="settings-card">
+          <h3>店铺基本信息</h3>
+          <div class="form-row"><label>店铺名称</label><input type="text" id="setShopName" class="input"></div>
+          <div class="form-row"><label>默认单价(元/小时)</label><input type="number" id="setPricePerHour" class="input" min="0" step="0.5"></div>
+          <div class="form-row"><label>默认时长(分钟,0=开放计时)</label><input type="number" id="setDefaultDuration" class="input" min="0" step="5"></div>
+          <div class="form-row"><label>超时前提醒(分钟,0=关闭)</label><input type="number" id="setOvertimeWarn" class="input" min="0" step="1"></div>
+          <div class="form-row"><label>超时语音提醒</label><input type="checkbox" id="setVoiceAlert"></div>
+        </div>
+        <div class="settings-card">
+          <h3>状态颜色主题</h3>
+          <div class="form-row"><label><i class="dot idle"></i>空闲</label><input type="color" id="colorIdle" class="color-input"></div>
+          <div class="form-row"><label><i class="dot running"></i>使用中</label><input type="color" id="colorRunning" class="color-input"></div>
+          <div class="form-row"><label><i class="dot paused"></i>暂停</label><input type="color" id="colorPaused" class="color-input"></div>
+          <div class="form-row"><label><i class="dot overtime"></i>超时</label><input type="color" id="colorOvertime" class="color-input"></div>
+          <button class="btn btn-secondary" id="resetColors">恢复默认配色</button>
+        </div>
+        <div class="settings-card wide">
+          <h3>背景壁纸
+            <span class="wallpaper-hint">上传周杰伦专辑封面或任意图片，支持多张轮播</span>
+          </h3>
+          <div class="wp-row">
+            <label class="btn btn-primary btn-sm wp-upload-label">
+              + 上传图片
+              <input type="file" id="wpFileInput" accept="image/*" multiple hidden>
+            </label>
+            <button class="btn btn-secondary btn-sm" id="wpShuffle">随机换一张</button>
+            <div class="wp-mode">
+              <label>轮播：</label>
+              <select id="wpMode">
+                <option value="off">关闭轮播(固定第一张)</option>
+                <option value="startup">每次打开自动换</option>
+                <option value="hourly">每小时自动换</option>
+              </select>
+            </div>
+            <div class="wp-mode">
+              <label>遮罩浓度：</label>
+              <input type="range" id="wpOverlay" min="0" max="80" value="35" step="5">
+              <span id="wpOverlayVal">35%</span>
+            </div>
+            <button class="btn btn-danger btn-sm" id="wpReset">恢复默认</button>
+          </div>
+          <div id="wpPreview" class="wp-grid"></div>
+        </div>
+        <div class="settings-card wide">
+          <h3>区域与桌台管理
+            <button class="btn btn-primary btn-sm" id="addArea">+ 添加区域</button>
+          </h3>
+          <div id="areaManager" class="area-manager"></div>
+        </div>
+        <div class="settings-card wide">
+          <h3>数据管理</h3>
+          <div class="data-actions">
+            <button class="btn btn-secondary" id="exportData">导出全部数据(备份)</button>
+            <button class="btn btn-secondary" id="importData">导入数据(恢复)</button>
+            <input type="file" id="importFile" accept=".json" style="display:none">
+            <button class="btn btn-danger" id="clearToday">清空今日数据</button>
+            <button class="btn btn-danger" id="clearAll">清空全部数据</button>
+          </div>
+          <p class="hint">数据保存在本机浏览器中，清除浏览器缓存会丢失数据，请定期导出备份。</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- 通用模态框 -->
+<div id="modal" class="modal-overlay" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modalTitle">标题</h3>
+      <button class="modal-close" id="modalClose">×</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- Toast 提示 -->
+<div id="toast" class="toast" hidden></div>
+
+<script src="app.js?v=3"></script>
+<script>
+  if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js'); }
+</script>
+</body>
+</html>
