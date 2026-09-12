@@ -45,11 +45,15 @@
   --tc-radius: var(--radius);
   --tc-name: 17px;
   --tc-time: 26px;
+  --tc-cust: 13px;
 }
 
 /* 桌台卡片大小档位:app.js 依据设置在 <html> 上写入 data-card-size */
-html[data-card-size="compact"] { --tc-min: 180px; --tc-gap: 10px; --tc-pad: 12px 14px; --tc-radius: 16px; --tc-name: 14px; --tc-time: 19px; }
-html[data-card-size="large"]   { --tc-min: 320px; --tc-gap: 22px; --tc-pad: 24px; --tc-radius: 30px; --tc-name: 19px; --tc-time: 30px; }
+html[data-card-size="compact"] { --tc-min: 160px; --tc-gap: 8px; --tc-pad: 9px 11px; --tc-radius: 14px; --tc-name: 13px; --tc-time: 17px; --tc-cust: 11px; --tc-h: 120px; }
+html[data-card-size="large"]   { --tc-min: 320px; --tc-gap: 22px; --tc-pad: 24px; --tc-radius: 30px; --tc-name: 19px; --tc-time: 30px; --tc-cust: 14px; }
+/* 紧凑档:状态胶囊与剩余/超时行同步缩小 */
+html[data-card-size="compact"] .tc-status { font-size: 10px; padding: 2px 8px; }
+html[data-card-size="compact"] .tc-remaining { font-size: 11px; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -209,6 +213,8 @@ body {
   backdrop-filter: blur(30px) saturate(1.7);
   -webkit-backdrop-filter: blur(30px) saturate(1.7);
   border-radius: var(--tc-radius); padding: var(--tc-pad); cursor: pointer;
+  /* 固定卡高:紧凑档下带备注/超时行的卡片不会把整行撑高,计时始终贴底 */
+  display: flex; flex-direction: column; height: var(--tc-h, auto);
   transition: transform 0.35s var(--ease-spring), box-shadow 0.35s var(--ease-smooth);
   border: 1px solid var(--edge); position: relative; overflow: hidden;
   box-shadow:
@@ -245,13 +251,13 @@ body {
 .table-card.paused .tc-status { background: var(--c-paused); }
 .table-card.overtime .tc-status { background: var(--c-overtime); }
 
-.tc-customer { font-size: 13px; color: var(--text); margin-bottom: 2px; position: relative; z-index: 2; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-customer { font-size: var(--tc-cust, 13px); color: var(--text); margin-bottom: 2px; position: relative; z-index: 2; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-notes {
-  font-size: 12px; color: var(--text-muted); margin: 0 0 2px; position: relative; z-index: 2; font-weight: 500;
+  font-size: var(--tc-cust, 13px); color: var(--text-muted); margin: 0 0 2px; position: relative; z-index: 2; font-weight: 500;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .tc-time {
-  font-size: var(--tc-time); font-weight: 800; font-variant-numeric: tabular-nums; margin: 6px 0;
+  font-size: var(--tc-time); font-weight: 800; font-variant-numeric: tabular-nums; margin: auto 0 4px;
   letter-spacing: -0.03em; position: relative; z-index: 2;
 }
 .tc-remaining { font-size: 12px; color: var(--text-muted); position: relative; z-index: 2; font-weight: 500; }
@@ -551,7 +557,6 @@ body {
   /* 桌台卡:跟随"桌台卡片大小"设置(紧凑档手机上可两列) */
   .table-grid { grid-template-columns: repeat(auto-fill, minmax(var(--tc-min), 1fr)); gap: var(--tc-gap); }
   .table-card { padding: var(--tc-pad); }
-  .tc-customer { font-size: 14px; }
 
   /* 销售汇总:两列 */
   .sales-summary { grid-template-columns: repeat(2, 1fr); gap: 12px; }
