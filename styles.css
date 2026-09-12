@@ -49,7 +49,7 @@
 }
 
 /* 桌台卡片大小档位:app.js 依据设置在 <html> 上写入 data-card-size */
-html[data-card-size="compact"] { --tc-min: 160px; --tc-gap: 8px; --tc-pad: 9px 11px; --tc-radius: 14px; --tc-name: 13px; --tc-time: 17px; --tc-cust: 11px; --tc-h: 120px; }
+html[data-card-size="compact"] { --tc-min: 136px; --tc-gap: 6px; --tc-pad: 9px 11px; --tc-radius: 14px; --tc-name: 13px; --tc-time: 16px; --tc-cust: 11px; --tc-h: 120px; }
 html[data-card-size="large"]   { --tc-min: 320px; --tc-gap: 22px; --tc-pad: 24px; --tc-radius: 30px; --tc-name: 19px; --tc-time: 30px; --tc-cust: 14px; }
 /* 紧凑档:状态胶囊与剩余/超时行同步缩小 */
 html[data-card-size="compact"] .tc-status { font-size: 10px; padding: 2px 8px; }
@@ -242,8 +242,9 @@ body {
 }
 
 .tc-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; position: relative; z-index: 2; }
-.tc-name { font-size: var(--tc-name); font-weight: 700; letter-spacing: -0.02em; }
+.tc-name { font-size: var(--tc-name); font-weight: 700; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tc-status {
+  flex-shrink: 0; margin-left: 8px;
   font-size: 11px; padding: 3px 11px; border-radius: 100px; color: #fff;
   background: var(--c-idle); white-space: nowrap; font-weight: 700; letter-spacing: 0.02em;
 }
