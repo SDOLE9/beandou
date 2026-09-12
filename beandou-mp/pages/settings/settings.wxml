@@ -1,0 +1,112 @@
+<!-- pages/settings/settings.wxml -->
+<view class="custom-nav" style="padding-top: {{navHeight}}px;">
+  <view class="nav-content glass">
+    <text class="nav-logo">⚙️ 系统设置</text>
+  </view>
+</view>
+
+<view class="page-container">
+  <!-- 基础信息 -->
+  <view class="st-card">
+    <view class="st-title">🏪 基础信息</view>
+    <view class="st-row">
+      <text class="st-label">店铺名称</text>
+      <input class="st-input" value="{{settings.shopName}}" bindinput="onShopName" />
+    </view>
+    <view class="st-row">
+      <text class="st-label">默认时长(分钟)</text>
+      <input class="st-input" type="number" value="{{settings.defaultDuration}}" bindinput="onDurationChange" />
+    </view>
+    <view class="st-row">
+      <text class="st-label">超时前提醒(分钟)</text>
+      <input class="st-input" type="number" value="{{settings.overtimeWarn}}" bindinput="onOvertimeWarn" />
+    </view>
+    <view class="st-row">
+      <text class="st-label">超时语音提醒</text>
+      <switch checked="{{settings.voiceAlert}}" bindchange="onVoiceAlert" color="#22c55e" />
+    </view>
+    <view class="st-hint">默认时长填 0 表示开放计时、不限时长；超时前提醒用于卡片变黄预警</view>
+  </view>
+
+  <!-- 状态颜色 -->
+  <view class="st-card">
+    <view class="st-title">🎨 状态颜色</view>
+    <view class="preview-hint">改颜色后看板卡片会整块变色，下方实时预览：</view>
+    <view class="preview-grid">
+      <table-card
+        wx:for="{{previewTables}}"
+        wx:key="id"
+        table="{{item.table}}"
+        runtime="{{item.runtime}}"
+        label="{{item.label}}"
+        colors="{{colors}}"
+        overtime-warn="{{overtimeWarnNum}}"
+      ></table-card>
+    </view>
+    <view class="color-row">
+      <text class="color-label"><text class="dot idle"></text>空闲</text>
+      <view class="color-swatch" style="background:{{colors.idle}}"></view>
+      <input class="color-input" value="{{colors.idle}}" bindinput="onColorIdle" />
+    </view>
+    <view class="color-row">
+      <text class="color-label"><text class="dot running"></text>使用中(占座)</text>
+      <view class="color-swatch" style="background:{{colors.running}}"></view>
+      <input class="color-input" value="{{colors.running}}" bindinput="onColorRunning" />
+    </view>
+    <view class="color-row">
+      <text class="color-label"><text class="dot paused"></text>暂停</text>
+      <view class="color-swatch" style="background:{{colors.paused}}"></view>
+      <input class="color-input" value="{{colors.paused}}" bindinput="onColorPaused" />
+    </view>
+    <view class="color-row">
+      <text class="color-label"><text class="dot warn"></text>即将超时(预警)</text>
+      <view class="color-swatch" style="background:{{colors.warn}}"></view>
+      <input class="color-input" value="{{colors.warn}}" bindinput="onColorWarn" />
+    </view>
+    <view class="color-row">
+      <text class="color-label"><text class="dot overtime"></text>已超时(报警)</text>
+      <view class="color-swatch" style="background:{{colors.overtime}}"></view>
+      <input class="color-input" value="{{colors.overtime}}" bindinput="onColorOvertime" />
+    </view>
+    <button class="st-ghost-btn" catchtap="resetColors">恢复默认配色</button>
+  </view>
+
+  <!-- 区域与桌台 -->
+  <view class="st-card">
+    <view class="st-title-row">
+      <text class="st-title">🧱 区域与桌台</text>
+      <button class="st-mini-btn" catchtap="addArea">＋ 添加区域</button>
+    </view>
+    <view wx:for="{{areaList}}" wx:key="id" class="area-row">
+      <input class="input area-input" value="{{item.name}}" data-idx="{{index}}" data-field="name" bindinput="onAreaInput" placeholder="区域名" />
+      <input class="input tables-input" value="{{item.tablesStr}}" data-idx="{{index}}" data-field="tables" bindinput="onAreaInput" placeholder="桌号,如1,2,3" />
+      <button class="ra-btn ra-danger" catchtap="deleteArea" data-idx="{{index}}">删除</button>
+    </view>
+    <view wx:if="{{areaList.length === 0}}" class="st-hint">暂无区域，点上方"＋ 添加区域"创建</view>
+    <view wx:else class="st-hint">桌号用逗号分隔，如：1,2,3,4；改动后看板即时生效</view>
+  </view>
+
+  <!-- 数据管理 -->
+  <view class="st-card">
+    <view class="st-title">💾 数据管理</view>
+    <view class="data-grid">
+      <button class="data-btn" catchtap="exportData">📤<text>导出备份</text></button>
+      <button class="data-btn" catchtap="importData">📥<text>导入数据</text></button>
+      <button class="data-btn data-warn" catchtap="clearToday">🧹<text>清空今日</text></button>
+      <button class="data-btn data-danger" catchtap="clearAll">⚠️<text>清空全部</text></button>
+    </view>
+    <view class="st-hint">数据保存在本机，卸载小程序会丢失；换手机前先"导出备份"，把文件用微信发到新手机再"导入数据"即可迁移。</view>
+  </view>
+</view>
+
+<!-- 确认弹窗 -->
+<modal visible="{{modalType === 'confirm'}}" title="请确认" bind:close="closeModal">
+  <view slot="default">
+    <view class="font-bold" style="margin-bottom: 12rpx">{{confirmData.title}}</view>
+    <view class="text-muted">{{confirmData.msg}}</view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="closeModal">取消</button>
+    <button class="btn btn-danger" catchtap="confirmOk">确认</button>
+  </view>
+</modal>

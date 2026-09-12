@@ -1,0 +1,69 @@
+<!-- pages/sales/sales.wxml -->
+<view class="custom-nav" style="padding-top: {{navHeight}}px;">
+  <view class="nav-content glass">
+    <text class="nav-logo">📋 使用记录</text>
+  </view>
+</view>
+
+<view class="page-container">
+  <!-- 日期选择卡 -->
+  <view class="date-card glass">
+    <view class="date-main">
+      <view class="dc-arrow" bindtap="prevDay">‹</view>
+      <picker class="dc-picker" mode="date" value="{{dateStr}}" bindchange="onDateChange">
+        <view class="dc-date">
+          <text class="dc-date-str">{{dateStr}}</text>
+          <text class="dc-week">{{weekday}}</text>
+        </view>
+      </picker>
+      <view class="dc-arrow" bindtap="nextDay">›</view>
+    </view>
+    <view class="date-chips">
+      <view wx:if="{{dateStr !== todayStr}}" class="chip-btn" bindtap="goToday">回到今天</view>
+    </view>
+  </view>
+
+  <!-- 当日统计 -->
+  <view class="hero glass">
+    <view class="hero-label">当日使用统计</view>
+    <view class="hero-sub">
+      <view class="hs-item">
+        <text class="hs-num">{{summary.count}}</text>
+        <text class="hs-label">记录数</text>
+      </view>
+      <view class="hs-divider"></view>
+      <view class="hs-item">
+        <text class="hs-num">{{summary.tables}}</text>
+        <text class="hs-label">开台桌</text>
+      </view>
+      <view class="hs-divider"></view>
+      <view class="hs-item">
+        <text class="hs-num">{{summary.totalPeople}}</text>
+        <text class="hs-label">客流(人)</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 记录卡 -->
+  <view class="sales-list">
+    <view wx:for="{{daySales}}" wx:key="id" class="sale-card">
+      <view class="sale-head">
+        <view class="sale-who">
+          <text class="sale-table">{{item.tableLabel}}</text>
+          <text class="sale-cust">👤 {{item.customer || '未留名'}}</text>
+        </view>
+      </view>
+      <view class="sale-meta">
+        <text class="sale-chip">🕐 {{item.time}}</text>
+        <text class="sale-chip">⏱ {{item.durationText}}</text>
+        <text class="sale-chip">👥 {{item.people || 0}}人</text>
+      </view>
+      <view wx:if="{{item.notes}}" class="sale-notes">📝 {{item.notes}}</view>
+    </view>
+
+    <view wx:if="{{daySales.length === 0}}" class="empty-state">
+      <view class="empty-icon">📋</view>
+      <view>该日期暂无使用记录</view>
+    </view>
+  </view>
+</view>

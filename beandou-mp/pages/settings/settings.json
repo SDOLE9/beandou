@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "modal": "/components/modal/modal",
+    "table-card": "/components/table-card/table-card"
+  }
+}

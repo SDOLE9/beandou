@@ -1,0 +1,175 @@
+/* components/table-card/table-card.wxss
+   极简白卡风：纯白卡面 + 状态色药丸徽章 + 彩色大数字 + 彩色进度条
+   卡片只靠阴影抬升(不加边框/底色)，状态色集中在药丸、数字、进度条三处 */
+:host {
+  display: block;
+  height: 100%;
+}
+.table-card {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 28rpx;
+  padding: 24rpx 24rpx 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04), 0 12rpx 28rpx rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* 已超时：红色光晕呼吸提醒 */
+.table-card.vs-overtime {
+  animation: overtime-glow 2s ease-in-out infinite;
+}
+@keyframes overtime-glow {
+  0%, 100% { box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.1), 0 12rpx 28rpx rgba(239, 68, 68, 0.28); }
+  50% { box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.18), 0 16rpx 38rpx rgba(239, 68, 68, 0.45); }
+}
+
+/* ---- 实色卡白字方案(默认) ---- */
+.light-text .tc-name { color: #fff; }
+.light-text .tc-time { color: #fff; text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15); }
+.light-text .tc-sub { color: rgba(255, 255, 255, 0.85); }
+.light-text .tc-foot-left { color: rgba(255, 255, 255, 0.92); }
+.light-text .tc-fee { color: #fff; }
+.light-text .tc-chip { background: rgba(255, 255, 255, 0.25); color: #fff; }
+
+/* ---- 实色卡深字方案(自定义浅色时自动切换) ---- */
+.dark-text .tc-name { color: #1e293b; }
+.dark-text .tc-time { color: #1e293b; }
+.dark-text .tc-sub { color: rgba(30, 41, 59, 0.72); }
+.dark-text .tc-foot-left { color: rgba(30, 41, 59, 0.78); }
+.dark-text .tc-fee { color: #1e293b; }
+.dark-text .tc-chip { background: rgba(30, 41, 59, 0.12); color: #1e293b; }
+
+.tc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 10rpx;
+}
+.tc-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 1;
+  min-width: 0;
+}
+/* 加购数量小签(底部行) */
+.tc-chip {
+  flex-shrink: 0;
+  margin-left: 8rpx;
+  font-size: 20rpx;
+  color: var(--text-secondary);
+  background: rgba(15, 23, 42, 0.05);
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+}
+/* 状态药丸：实色，白字，状态一眼可辨 */
+.tc-status {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  font-weight: 700;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  white-space: nowrap;
+}
+.vs-idle .tc-status {
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+}
+
+/* 主计时：大号等宽数字，颜色随状态 */
+.tc-time {
+  font-size: 42rpx;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 2rpx 0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tc-sub {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-bottom: 4rpx;
+}
+
+/* 剩余时间进度条 */
+.tc-bar {
+  height: 10rpx;
+  border-radius: 999rpx;
+  margin: 12rpx 0 2rpx;
+  overflow: hidden;
+}
+.tc-bar-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  transition: width 0.5s ease;
+}
+
+/* 底部：顾客信息 + 金额。margin-top:auto 钉在卡底，与同行其他卡对齐 */
+.tc-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12rpx;
+  margin-top: auto;
+  padding-top: 14rpx;
+}
+.tc-foot-left {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 22rpx;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tc-fee {
+  flex-shrink: 0;
+  font-size: 26rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 空闲：虚线圆圈 + 引导文案（在剩余空间垂直居中） */
+.tc-empty {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14rpx 0 4rpx;
+}
+.tc-plus {
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  border: 3rpx dashed rgba(100, 116, 139, 0.4);
+  background: rgba(100, 116, 139, 0.06);
+  color: #94a3b8;
+  font-size: 44rpx;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  line-height: 1;
+  padding-bottom: 6rpx;
+}
+.tc-empty-hint {
+  font-size: 20rpx;
+  color: #94a3b8;
+  margin-top: 8rpx;
+}
+.vs-idle .tc-fee {
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 24rpx;
+}

@@ -1,0 +1,190 @@
+<!-- pages/dashboard/dashboard.wxml -->
+<!-- 自定义导航栏 -->
+<view class="custom-nav" style="padding-top: {{navHeight}}px;">
+  <view class="nav-content glass">
+    <view class="nav-left">
+      <text class="nav-logo">🫘 拼豆计时</text>
+      <text class="nav-shop">{{shopName}}</text>
+    </view>
+    <view class="nav-right">
+      <text class="nav-clock">{{clock}}</text>
+    </view>
+  </view>
+</view>
+
+<view class="page-container" style="--c-idle:{{colors.idle}};--c-running:{{colors.running}};--c-paused:{{colors.paused}};--c-warn:{{colors.warn}};--c-overtime:{{colors.overtime}};">
+  <!-- 实时统计卡片 -->
+  <view class="stats-bar glass">
+    <view class="stat-item">
+      <view class="stat-value" style="color: {{statColors.running}}">{{summary.running}}</view>
+      <view class="stat-label">使用中</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-value" style="color: {{statColors.idle}}">{{summary.idleTables}}</view>
+      <view class="stat-label">空闲桌</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-value {{summary.overtime > 0 ? 'overtime-alarm' : ''}}" style="color: {{statColors.overtime}}">{{summary.overtime}}</view>
+      <view class="stat-label">已超时</view>
+    </view>
+    <view class="stat-divider"></view>
+    <view class="stat-item">
+      <view class="stat-value" style="color: #7c3aed">{{summary.totalPeople}}</view>
+      <view class="stat-label">在店人数</view>
+    </view>
+  </view>
+
+  <!-- 筛选栏 -->
+  <view class="filter-bar glass">
+    <picker mode="selector" range="{{areaOptions}}" bindchange="onAreaChange">
+      <view class="filter-btn">{{areaOptions[areaIdx]}} ▾</view>
+    </picker>
+    <picker mode="selector" range="{{statusOptions}}" bindchange="onStatusChange">
+      <view class="filter-btn">{{statusOptions[statusIdx]}} ▾</view>
+    </picker>
+    <view class="legend-bar">
+      <text class="legend-item"><text class="dot idle"></text>空闲</text>
+      <text class="legend-item"><text class="dot running"></text>使用</text>
+      <text class="legend-item"><text class="dot paused"></text>暂停</text>
+      <text class="legend-item"><text class="dot warn"></text>预警</text>
+      <text class="legend-item"><text class="dot overtime"></text>超时</text>
+    </view>
+  </view>
+
+  <!-- 桌台看板 -->
+  <view class="board">
+    <block wx:for="{{areaList}}" wx:key="id" wx:for-item="area">
+      <view class="area-section">
+        <view class="area-header glass">
+          <text class="area-name">{{area.name}}</text>
+          <text class="area-total">共{{area.total}}桌</text>
+        </view>
+        <view class="table-grid">
+          <table-card
+            wx:for="{{area.tables}}"
+            wx:key="id"
+            wx:for-item="t"
+            table="{{t}}"
+            runtime="{{t.runtime}}"
+            label="{{t.label}}"
+            colors="{{colors}}"
+            overtime-warn="{{overtimeWarn}}"
+            bind:tap="onTableTap"
+            data-id="{{t.id}}"
+          ></table-card>
+        </view>
+        <view wx:if="{{area.tables.length === 0}}" class="empty-state">该筛选下无桌台</view>
+      </view>
+    </block>
+    <view wx:if="{{areaList.length === 0}}" class="empty-state">暂无桌台，请到「系统设置」中添加</view>
+  </view>
+</view>
+
+<!-- 弹窗：开台 -->
+<modal visible="{{modalType === 'start'}}" title="开台 · {{modalTitle}}" bind:close="closeModal">
+  <view slot="default">
+    <view class="form-row">
+      <text class="form-label">顾客姓名</text>
+      <input class="input" value="{{form.customer}}" data-field="customer" bindinput="onFormInput" placeholder="选填，如 张小姐" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">联系电话</text>
+      <input class="input" value="{{form.phone}}" data-field="phone" bindinput="onFormInput" placeholder="选填" type="number" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">人数</text>
+      <input class="input" value="{{form.people}}" data-field="people" bindinput="onFormInput" type="number" placeholder="1" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">计时模式</text>
+      <picker mode="selector" range="{{modeOptions}}" bindchange="onModeChange">
+        <view class="input">{{modeOptions[form.modeIdx]}} ▾</view>
+      </picker>
+    </view>
+    <view wx:if="{{form.modeIdx === 1}}" class="form-row">
+      <text class="form-label">时长(分钟)</text>
+      <input class="input" value="{{form.duration}}" data-field="duration" bindinput="onFormInput" type="number" placeholder="请输入分钟数" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">备注</text>
+      <input class="input" value="{{form.notes}}" data-field="notes" bindinput="onFormInput" placeholder="选填" />
+    </view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="closeModal">取消</button>
+    <button class="btn btn-success" catchtap="confirmStart">开台</button>
+  </view>
+</modal>
+
+<!-- 弹窗：运行中 -->
+<modal visible="{{modalType === 'running'}}" title="{{modalTitle}}" bind:close="closeModal">
+  <view slot="default">
+    <view class="bill-section">
+      <view class="bill-section-title">当前使用</view>
+      <view class="bill-row"><text>顾客</text><text>{{runData.customer || '未留名'}} {{runData.phone}}</text></view>
+      <view class="bill-row"><text>人数</text><text>{{runData.people}}人</text></view>
+      <view class="bill-row"><text>状态</text><text>{{runData.statusText}}</text></view>
+      <view class="bill-row"><text>已用时长</text><text>{{runData.timeDisplay}}</text></view>
+      <view wx:if="{{runData.remainDisplay}}" class="bill-row"><text>{{runData.remainLabel}}</text><text>{{runData.remainDisplay}}</text></view>
+    </view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-danger btn-sm" catchtap="onClear">清空</button>
+    <button class="btn btn-secondary btn-sm" catchtap="onExtend">加时</button>
+    <button wx:if="{{runData.isPaused}}" class="btn btn-primary btn-sm" catchtap="onResume">继续</button>
+    <button wx:else class="btn btn-secondary btn-sm" catchtap="onPause">暂停</button>
+    <button class="btn btn-success btn-sm" catchtap="onCheckout">结束</button>
+  </view>
+</modal>
+
+<!-- 弹窗：结束 -->
+<modal visible="{{modalType === 'checkout'}}" title="结束使用" bind:close="closeModal">
+  <view slot="default">
+    <view class="bill-section">
+      <view class="bill-section-title">使用记录 · {{modalTitle}}</view>
+      <view class="bill-row"><text>顾客</text><text>{{runData.customer || '未留名'}} {{runData.phone}}</text></view>
+      <view class="bill-row"><text>使用时长</text><text>{{runData.timeDisplay}}</text></view>
+      <view wx:if="{{runData.remainDisplay}}" class="bill-row"><text>{{runData.remainLabel}}</text><text>{{runData.remainDisplay}}</text></view>
+    </view>
+    <view class="form-row">
+      <text class="form-label">备注</text>
+      <input class="input" value="{{checkout.notes}}" data-field="notes" bindinput="onCheckoutInput" placeholder="选填" />
+    </view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="showRunning">返回</button>
+    <button class="btn btn-success" catchtap="confirmCheckout">确认结束</button>
+  </view>
+</modal>
+
+<!-- 弹窗：加时 -->
+<modal visible="{{modalType === 'extend'}}" title="加时" bind:close="closeModal">
+  <view slot="default">
+    <view class="form-row">
+      <text class="form-label">增加时长(分钟)</text>
+      <input class="input" value="{{extendMinutes}}" data-field="extendMinutes" bindinput="onFormInput" type="number" />
+    </view>
+    <view class="text-muted text-sm">加时将叠加到固定时长上</view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="showRunning">取消</button>
+    <button class="btn btn-primary" catchtap="confirmExtend">确定</button>
+  </view>
+</modal>
+
+<!-- 确认弹窗 -->
+<modal visible="{{modalType === 'confirm'}}" title="请确认" bind:close="closeModal">
+  <view slot="default">
+    <view class="font-bold" style="margin-bottom: 12rpx">{{confirmData.title}}</view>
+    <view class="text-muted">{{confirmData.msg}}</view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="closeModal">取消</button>
+    <button class="btn btn-danger" catchtap="confirmOk">确认</button>
+  </view>
+</modal>
+
+<!-- Toast -->
+<view wx:if="{{toast.visible}}" class="toast {{toast.type}}">{{toast.msg}}</view>

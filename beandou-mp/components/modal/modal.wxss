@@ -1,0 +1,72 @@
+/* components/modal/modal.wxss - 自包含样式(居中覆盖弹窗) */
+
+.modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 40rpx;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 620rpx;
+  max-height: 82vh;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 36rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 24rpx 64rpx rgba(31, 38, 135, 0.24), inset 0 2rpx 4rpx rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 28rpx 32rpx 20rpx;
+  border-bottom: 2rpx solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.modal-close {
+  font-size: 44rpx;
+  color: #94a3b8;
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 24rpx 32rpx;
+}
+
+.modal-footer {
+  flex-shrink: 0;
+  padding: 20rpx 32rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  border-top: 2rpx solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.85);
+}

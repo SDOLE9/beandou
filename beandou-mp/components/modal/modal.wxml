@@ -1,0 +1,15 @@
+<!-- components/modal/modal.wxml -->
+<view wx:if="{{visible}}" class="modal-mask" catchtap="onMaskTap">
+  <view class="modal-sheet" catchtap="onSheetTap">
+    <view class="modal-header">
+      <text class="modal-title">{{title}}</text>
+      <view class="modal-close" catchtap="onClose">×</view>
+    </view>
+    <view class="modal-body">
+      <slot></slot>
+    </view>
+    <view class="modal-footer">
+      <slot name="footer"></slot>
+    </view>
+  </view>
+</view>

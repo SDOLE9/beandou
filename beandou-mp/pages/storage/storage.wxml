@@ -1,0 +1,135 @@
+<!-- pages/storage/storage.wxml -->
+<view class="custom-nav" style="padding-top: {{navHeight}}px;">
+  <view class="nav-content glass">
+    <text class="nav-logo">📦 储存管理</text>
+  </view>
+</view>
+
+<view class="page-container">
+  <!-- 统计条 -->
+  <view class="stats-row glass">
+    <view class="mini-stat">
+      <text class="ms-num" style="color:#3b82f6">{{stats.storedCount}}</text>
+      <text class="ms-label">储存中</text>
+    </view>
+    <view class="ms-divider"></view>
+    <view class="mini-stat">
+      <text class="ms-num {{stats.overdueCount > 0 ? 'ms-alarm' : ''}}" style="color:#ef4444">{{stats.overdueCount}}</text>
+      <text class="ms-label">已逾期</text>
+    </view>
+    <view class="ms-divider"></view>
+    <view class="mini-stat">
+      <text class="ms-num" style="color:#22c55e">{{stats.pickedCount}}</text>
+      <text class="ms-label">已取走</text>
+    </view>
+  </view>
+
+  <!-- 搜索 + 分段筛选 -->
+  <view class="toolbar glass">
+    <view class="search-box">
+      <text class="search-icon">🔍</text>
+      <input class="search-input" placeholder="搜顾客 / 作品 / 电话" value="{{searchKey}}" bindinput="onSearchInput" />
+      <text wx:if="{{searchKey}}" class="search-clear" catchtap="clearSearch">✕</text>
+    </view>
+    <view class="seg">
+      <view
+        wx:for="{{filterOptions}}"
+        wx:key="index"
+        class="seg-item {{filterIdx === index ? 'seg-active' : ''}}"
+        data-idx="{{index}}"
+        bindtap="onFilterTap"
+      >{{item}}</view>
+    </view>
+  </view>
+
+  <!-- 记录卡 -->
+  <view class="storage-list">
+    <view
+      wx:for="{{list}}"
+      wx:key="id"
+      class="rec-card {{item.badgeClass === 'overdue' ? 'rec-overdue' : ''}} {{item.status === 'picked' ? 'rec-picked' : ''}}"
+    >
+      <view class="rec-head">
+        <view class="rec-avatar" style="background:{{item.avatarColor}}">{{item.avatarChar}}</view>
+        <view class="rec-who">
+          <text class="rec-name">{{item.customer || '未留名'}}</text>
+          <text class="rec-phone">{{item.phone || '未留电话'}}</text>
+        </view>
+        <text class="rec-pill p-{{item.badgeClass}}">{{item.badgeText}}</text>
+      </view>
+      <view class="rec-work">
+        <text class="rec-work-label">作品</text>
+        <text class="rec-work-name">{{item.workName || '未填写'}}</text>
+      </view>
+      <view class="rec-dates">
+        <text>存入 {{item.storeDate}}</text>
+        <text wx:if="{{item.pickupDate}}"> · 预计取 {{item.pickupDate}}</text>
+      </view>
+      <view wx:if="{{item.notes}}" class="rec-notes">备注：{{item.notes}}</view>
+      <view class="rec-actions">
+        <button wx:if="{{item.status === 'stored'}}" class="ra-btn ra-primary" catchtap="onPick" data-id="{{item.id}}">✓ 取走</button>
+        <button class="ra-btn ra-ghost" catchtap="onEdit" data-id="{{item.id}}">编辑</button>
+        <button class="ra-btn ra-ghost ra-danger" catchtap="onDelete" data-id="{{item.id}}">删除</button>
+      </view>
+    </view>
+
+    <view wx:if="{{list.length === 0}}" class="empty-state">
+      <view class="empty-icon">📦</view>
+      <view>{{searchKey ? '没有匹配的记录' : '暂无储存记录'}}</view>
+      <view wx:if="{{!searchKey}}" class="empty-sub">点右下角 ＋ 新增</view>
+    </view>
+  </view>
+</view>
+
+<!-- 悬浮新增按钮 -->
+<view class="fab" bindtap="showAddDialog">＋</view>
+
+<!-- 新增/编辑弹窗 -->
+<modal visible="{{modalType === 'edit'}}" title="{{editIsNew ? '新增储存记录' : '编辑储存记录'}}" bind:close="closeModal">
+  <view slot="default">
+    <view class="form-row">
+      <text class="form-label">顾客姓名</text>
+      <input class="input" value="{{editForm.customer}}" data-field="customer" bindinput="onEditInput" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">联系电话</text>
+      <input class="input" value="{{editForm.phone}}" data-field="phone" bindinput="onEditInput" type="number" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">作品名称/描述</text>
+      <input class="input" value="{{editForm.workName}}" data-field="workName" bindinput="onEditInput" placeholder="如：彩虹猫 8x8" />
+    </view>
+    <view class="form-row">
+      <text class="form-label">储存日期</text>
+      <picker mode="date" value="{{editForm.storeDate}}" bindchange="onStoreDateChange">
+        <view class="input">{{editForm.storeDate}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="form-label">预计取走日期</text>
+      <picker mode="date" value="{{editForm.pickupDate}}" bindchange="onPickDateChange">
+        <view class="input">{{editForm.pickupDate || '选择日期'}}</view>
+      </picker>
+    </view>
+    <view class="form-row">
+      <text class="form-label">备注</text>
+      <textarea class="input textarea" value="{{editForm.notes}}" data-field="notes" bindinput="onEditInput" auto-height></textarea>
+    </view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="closeModal">取消</button>
+    <button class="btn btn-success" catchtap="confirmSave">保存</button>
+  </view>
+</modal>
+
+<!-- 确认弹窗 -->
+<modal visible="{{modalType === 'confirm'}}" title="请确认" bind:close="closeModal">
+  <view slot="default">
+    <view class="font-bold" style="margin-bottom: 12rpx">{{confirmData.title}}</view>
+    <view class="text-muted">{{confirmData.msg}}</view>
+  </view>
+  <view slot="footer">
+    <button class="btn btn-secondary" catchtap="closeModal">取消</button>
+    <button class="btn btn-danger" catchtap="confirmOk">确认</button>
+  </view>
+</modal>

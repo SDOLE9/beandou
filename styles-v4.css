@@ -1,0 +1,9 @@
+/* beandou v4 UI Layer —— 叠加在 v1 (styles.css) 之上的玻璃卡片风格 */
+:root{--glass:rgba(255,255,255,.68);--radius-xl:28px;--shadow-soft:0 20px 50px rgba(0,0,0,.08)}
+body{background:linear-gradient(135deg,#fff8f0,#f8fafc)}
+.glass-card,.card,.summary-card,.settings-card,.table-card,.stat-card{
+  background:var(--glass);
+  backdrop-filter:blur(25px);-webkit-backdrop-filter:blur(25px);
+  border-radius:var(--radius-xl);box-shadow:var(--shadow-soft);transition:.35s;
+}
+.summary-card:hover,.settings-card:hover,.table-card:hover{transform:translateY(-4px)}

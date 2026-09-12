@@ -1,0 +1,41 @@
+{
+  "pages": [
+    "pages/dashboard/dashboard",
+    "pages/sales/sales",
+    "pages/storage/storage",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "navigationBarTitleText": "拼豆计时管理",
+    "navigationStyle": "custom",
+    "backgroundColor": "#e7ecf5",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#6b7280",
+    "selectedColor": "#3b82f6",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/dashboard/dashboard",
+        "text": "桌台看板"
+      },
+      {
+        "pagePath": "pages/sales/sales",
+        "text": "使用记录"
+      },
+      {
+        "pagePath": "pages/storage/storage",
+        "text": "储存管理"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "系统设置"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

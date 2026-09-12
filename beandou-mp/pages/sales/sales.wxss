@@ -1,0 +1,241 @@
+/* pages/sales/sales.wxss
+   与看板/储存页统一：白卡 + 药丸信息条 + 大字金额 */
+
+/* 日期选择卡 */
+.date-card {
+  padding: 20rpx 24rpx;
+  margin-bottom: 20rpx;
+}
+.date-main {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+.dc-arrow {
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text-secondary);
+  font-size: 44rpx;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding-bottom: 6rpx;
+  box-sizing: border-box;
+}
+.dc-arrow:active { transform: scale(0.92); }
+.dc-picker { flex: 1; }
+.dc-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dc-date-str {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.dc-week {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-top: 2rpx;
+}
+.date-chips {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rpx;
+  margin-top: 14rpx;
+}
+.chip-btn {
+  background: rgba(15, 23, 42, 0.05);
+  color: var(--text-secondary);
+  border-radius: 999rpx;
+  padding: 10rpx 26rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+.chip-btn:active { transform: scale(0.96); }
+.chip-export {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+/* 营业额主卡 */
+.hero {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 30rpx 24rpx 24rpx;
+  margin-bottom: 20rpx;
+  text-align: center;
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04), 0 12rpx 28rpx rgba(15, 23, 42, 0.08);
+}
+.hero-label {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+.hero-value {
+  font-size: 60rpx;
+  font-weight: 800;
+  color: #16a34a;
+  margin: 8rpx 0 22rpx;
+  font-variant-numeric: tabular-nums;
+}
+.hero-sub {
+  display: flex;
+  align-items: center;
+  border-top: 2rpx solid rgba(15, 23, 42, 0.05);
+  padding-top: 20rpx;
+}
+.hs-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hs-num {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.hs-label {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  margin-top: 4rpx;
+}
+.hs-divider {
+  width: 2rpx;
+  height: 48rpx;
+  background: rgba(15, 23, 42, 0.08);
+}
+
+/* 收入构成 */
+.split-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+.split-card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04), 0 10rpx 24rpx rgba(15, 23, 42, 0.07);
+}
+.sp-label {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+.sp-value {
+  font-size: 30rpx;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 记录卡 */
+.sales-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+.sale-card {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 24rpx;
+  box-shadow: 0 2rpx 8rpx rgba(15, 23, 42, 0.04), 0 12rpx 28rpx rgba(15, 23, 42, 0.08);
+}
+.sale-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16rpx;
+}
+.sale-who {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.sale-table {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.sale-cust {
+  font-size: 22rpx;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sale-total {
+  flex-shrink: 0;
+  font-size: 34rpx;
+  font-weight: 800;
+  color: #16a34a;
+  font-variant-numeric: tabular-nums;
+}
+.sale-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-top: 16rpx;
+}
+.sale-chip {
+  font-size: 20rpx;
+  color: var(--text-secondary);
+  background: rgba(15, 23, 42, 0.05);
+  padding: 6rpx 16rpx;
+  border-radius: 999rpx;
+  font-variant-numeric: tabular-nums;
+}
+.sale-pay {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+  font-weight: 600;
+}
+.sale-items {
+  margin-top: 12rpx;
+  font-size: 22rpx;
+  color: var(--text-secondary);
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 12rpx;
+  padding: 10rpx 16rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sale-items-fee {
+  color: #b45309;
+  font-weight: 700;
+  margin-left: 8rpx;
+}
+.sale-fee-line {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14rpx;
+  padding-top: 14rpx;
+  border-top: 2rpx solid rgba(15, 23, 42, 0.05);
+  font-size: 22rpx;
+  color: var(--text-muted);
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 80rpx 0 60rpx;
+  color: var(--text-muted);
+  font-size: 30rpx;
+}
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 16rpx;
+}

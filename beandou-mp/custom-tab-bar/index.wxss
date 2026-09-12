@@ -1,0 +1,55 @@
+/* custom-tab-bar/index.wxss
+   底部导航：毛玻璃 + 图标 + 选中高亮胶囊 */
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 8rpx;
+  padding: 10rpx 16rpx;
+  padding-bottom: calc(10rpx + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 -8rpx 32rpx rgba(31, 38, 135, 0.08);
+  z-index: 999;
+  box-sizing: border-box;
+}
+
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rpx;
+  padding: 10rpx 0 8rpx;
+  border-radius: 22rpx;
+  transition: background 0.2s;
+}
+
+.tab-icon {
+  font-size: 40rpx;
+  line-height: 1.15;
+  transition: transform 0.2s;
+}
+.tab-label {
+  font-size: 20rpx;
+  color: #64748b;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+/* 选中态：主题色胶囊 + 文字加粗 + 图标微放大 */
+.tab-item.active {
+  background: rgba(59, 130, 246, 0.12);
+}
+.tab-item.active .tab-label {
+  color: #3b82f6;
+  font-weight: 700;
+}
+.tab-item.active .tab-icon {
+  transform: translateY(-2rpx) scale(1.1);
+}

@@ -1,0 +1,193 @@
+/* =========================================================================
+   app.wxss - 全局样式 (液态玻璃主题)
+   ========================================================================= */
+
+/* CSS 变量 */
+page {
+  --c-idle: #6b7280;
+  --c-running: #22c55e;
+  --c-paused: #3b82f6;
+  --c-overtime: #ef4444;
+
+  --bg-primary: #e7ecf5;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 8rpx 32rpx rgba(31, 38, 135, 0.1);
+  --glass-inner: inset 0 2rpx 4rpx rgba(255, 255, 255, 0.8);
+  --glass-radius: 28rpx;
+
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --btn-primary: #3b82f6;
+  --btn-success: #22c55e;
+  --btn-danger: #ef4444;
+  --btn-secondary: #64748b;
+
+  background: linear-gradient(135deg, #e0e7ff 0%, #f0f4ff 30%, #faf5ff 60%, #fef0f4 100%);
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text-primary);
+  font-size: 28rpx;
+}
+
+/* 玻璃卡片基础类 */
+.glass {
+  background: rgba(255, 255, 255, 0.5);
+  border: 2rpx solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--glass-radius);
+  box-shadow: var(--glass-shadow), var(--glass-inner);
+}
+
+/* 按钮基础 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx 32rpx;
+  border-radius: 20rpx;
+  font-size: 26rpx;
+  font-weight: 600;
+  border: none;
+  transition: all 0.2s;
+}
+.btn::after { border: none; }
+
+.btn-primary {
+  background: rgba(59, 130, 246, 0.9);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.3), inset 0 2rpx 4rpx rgba(255,255,255,0.3);
+}
+.btn-success {
+  background: rgba(34, 197, 94, 0.9);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(34, 197, 94, 0.3), inset 0 2rpx 4rpx rgba(255,255,255,0.3);
+}
+.btn-danger {
+  background: rgba(239, 68, 68, 0.9);
+  color: #fff;
+  box-shadow: 0 4rpx 16rpx rgba(239, 68, 68, 0.3), inset 0 2rpx 4rpx rgba(255,255,255,0.3);
+}
+.btn-secondary {
+  background: rgba(100, 116, 139, 0.15);
+  color: var(--text-secondary);
+  border: 2rpx solid rgba(100, 116, 139, 0.2);
+}
+.btn-sm { padding: 10rpx 20rpx; font-size: 24rpx; border-radius: 16rpx; }
+.btn-block { width: 100%; }
+
+/* 输入框 */
+.input {
+  background: rgba(255, 255, 255, 0.6);
+  border: 2rpx solid rgba(255, 255, 255, 0.8);
+  border-radius: 16rpx;
+  padding: 18rpx 24rpx;
+  font-size: 28rpx;
+  box-shadow: var(--glass-inner);
+  color: var(--text-primary);
+}
+
+/* 状态点 */
+.dot {
+  display: inline-block;
+  width: 20rpx;
+  height: 20rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+}
+.dot.idle { background: var(--c-idle); }
+.dot.running { background: var(--c-running); }
+.dot.paused { background: var(--c-paused); }
+.dot.warn { background: var(--c-warn, #f59e0b); }
+.dot.overtime { background: var(--c-overtime); }
+
+/* 自定义导航栏(各页共用)：navHeight 由 JS 按胶囊位置算出，作为容器 padding-top，
+   导航卡放在胶囊下方，容器高度由内容自然撑开，不会与下方内容重叠 */
+.custom-nav {
+  padding: 0 24rpx;
+}
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 28rpx;
+  margin-bottom: 16rpx;
+}
+.nav-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+.nav-logo {
+  font-size: 34rpx;
+  font-weight: 700;
+}
+.nav-shop {
+  font-size: 24rpx;
+  color: var(--text-muted);
+}
+.nav-clock {
+  font-size: 38rpx;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* 页面容器：底部为自定义 tabBar 预留空间 */
+.page-container {
+  padding: 0 24rpx 200rpx;
+}
+
+/* 文本辅助 */
+.text-muted { color: var(--text-muted); }
+.text-sm { font-size: 28rpx; }
+.text-lg { font-size: 36rpx; }
+.font-bold { font-weight: 700; }
+
+/* 表单行 */
+.form-row {
+  margin-bottom: 24rpx;
+}
+.form-label {
+  font-size: 30rpx;
+  color: var(--text-secondary);
+  margin-bottom: 12rpx;
+  display: block;
+}
+
+/* 账单行 */
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid rgba(0, 0, 0, 0.04);
+  font-size: 30rpx;
+}
+.bill-row.total {
+  font-weight: 700;
+  font-size: 34rpx;
+  color: var(--text-primary);
+  border-top: 4rpx solid rgba(0, 0, 0, 0.08);
+  border-bottom: none;
+  padding-top: 20rpx;
+  margin-top: 8rpx;
+}
+.bill-section {
+  margin-bottom: 24rpx;
+}
+.bill-section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  margin-bottom: 16rpx;
+  color: var(--text-primary);
+}
+
+/* 空状态 */
+.empty-state {
+  text-align: center;
+  padding: 80rpx 0;
+  color: var(--text-muted);
+  font-size: 32rpx;
+}

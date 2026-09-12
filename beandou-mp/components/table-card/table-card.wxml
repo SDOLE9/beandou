@@ -1,0 +1,33 @@
+<!-- components/table-card/table-card.wxml -->
+<view class="table-card vs-{{visual}} {{textClass}}" style="{{cardStyle}}" bindtap="onTap">
+  <view class="tc-head">
+    <view class="tc-name">{{label}}</view>
+    <view class="tc-status" style="{{pillStyle}}">{{statusIcon}}{{statusText}}</view>
+  </view>
+
+  <!-- 空闲：引导开台 -->
+  <block wx:if="{{visual === 'idle'}}">
+    <view class="tc-empty">
+      <view class="tc-plus">＋</view>
+      <view class="tc-empty-hint">点击开台</view>
+    </view>
+    <view class="tc-foot">
+      <view class="tc-foot-left">{{footLeft}}</view>
+      <view class="tc-fee">{{feeDisplay}}</view>
+    </view>
+  </block>
+
+  <!-- 占用/预警/暂停/超时 -->
+  <block wx:else>
+    <view class="tc-time" style="{{timeStyle}}">{{timeDisplay}}</view>
+    <view wx:if="{{subDisplay}}" class="tc-sub">{{subDisplay}}</view>
+    <view wx:if="{{showBar}}" class="tc-bar" style="{{barTrack}}">
+      <view class="tc-bar-fill" style="{{barFill}}"></view>
+    </view>
+    <view class="tc-foot">
+      <view class="tc-foot-left">👤 {{footLeft}}</view>
+      <view wx:if="{{itemCount > 0}}" class="tc-chip">加购 {{itemCount}}</view>
+      <view class="tc-fee">{{feeDisplay}}</view>
+    </view>
+  </block>
+</view>
