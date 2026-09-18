@@ -54,6 +54,9 @@ html[data-card-size="large"]   { --tc-min: 320px; --tc-gap: 22px; --tc-pad: 24px
 /* 紧凑档:状态胶囊与剩余/超时行同步缩小 */
 html[data-card-size="compact"] .tc-status { font-size: 10px; padding: 2px 8px; }
 html[data-card-size="compact"] .tc-remaining { font-size: 11px; }
+/* 起始时间行(补记用):与 .tc-remaining 同风格,略小一档 */
+.tc-start { font-size: 11px; color: var(--text-muted); position: relative; z-index: 2; font-weight: 500; opacity: 0.85; }
+html[data-card-size="compact"] .tc-start { font-size: 10px; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -477,6 +480,11 @@ body {
 .modal-body .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 /* 允许收缩:紧凑弹窗下数字输入框的固有宽度会溢出网格轨道,压到旁边控件 */
 .modal-body .row-2 > .field, .modal-body .row-3 > .field { min-width: 0; }
+
+/* 补记起始时间:时间输入与「补记开始」按钮同行 */
+.bf-row { display: flex; align-items: center; gap: 10px; }
+.modal-body .field .bf-row input[type="time"] { width: auto; flex: 1 1 auto; min-width: 0; }
+.bf-row .btn { flex: 0 0 auto; white-space: nowrap; }
 
 .bill-section { margin-bottom: 18px; }
 .bill-section h4 { font-size: 13px; margin-bottom: 10px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }

@@ -1,0 +1,24 @@
+{
+  "name": "beandou",
+  "version": "1.0.0",
+  "private": true,
+  "description": "拼豆手工工坊桌台计时管理系统：网页版（PWA，可离线安装）+ 微信小程序版，零依赖、零构建",
+  "license": "MIT",
+  "keywords": [
+    "拼豆",
+    "计时管理",
+    "桌台管理",
+    "PWA",
+    "微信小程序"
+  ],
+  "scripts": {
+    "serve": "python -m http.server 8000",
+    "serve:node": "npx --yes serve -l 8000 ."
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "comments": {
+    "dependencies": "本项目为零依赖纯静态站点，不引入任何运行时依赖",
+    "serve": "本地预览用。serve 依赖系统已安装 Python；serve:node 通过 npx 临时获取 serve，不写入项目依赖"
+  }
+}

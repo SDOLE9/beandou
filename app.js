@@ -125,6 +125,23 @@ function msToHMS(ms) {
   if (h > 0) return `${h}时${pad2(m)}分${pad2(s)}秒`;
   return `${pad2(m)}分${pad2(s)}秒`;
 }
+/* 时间戳 -> HH:MM（用于展示起始时间点） */
+function fmtHM(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+/* 把 "HH:MM" 解析为过去的一个时间戳；若晚于当前时刻则按前一天处理（跨天补记） */
+function parseBackfillTime(str) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(str || '').trim());
+  if (!m) return null;
+  const hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+  if (hh > 23 || mm > 59) return null;
+  const now = new Date();
+  const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+  if (d.getTime() > now.getTime()) d.setDate(d.getDate() - 1);
+  return d.getTime();
+}
 function daysBetween(d1, d2) {
   const a = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
   const b = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
@@ -312,7 +329,8 @@ function syncTables() {
           status: 'idle',
           payment: '', packageName: '',
           people: 1,
-          sessionStart: 0,         // 本次(最后一次)开始时间戳
+          sessionStart: 0,         // 本段(最后一次继续)开始时间戳
+          startedAt: 0,            // 本次开台的实际起始时间戳(补记时=指定的过去时刻)
           accumulatedMs: 0,        // 已累计活跃时长(毫秒，不含当前段)
           pausedAt: 0,             // 暂停开始时间戳
           expectedMinutes: 0,      // 0=开放计时
@@ -474,6 +492,7 @@ function renderTableCard(t) {
     <div class="tc-customer">${t.status === 'idle' ? '—' : escHtml((t.payment || '') + ' ' + (t.packageName || '未选套餐'))}</div>
     ${t.status !== 'idle' && t.notes ? `<div class="tc-notes" title="${escHtml(t.notes)}">${escHtml(t.notes)}</div>` : ''}
     <div class="tc-time">${timeDisplay}</div>
+    ${t.status !== 'idle' && (t.startedAt || t.sessionStart) ? `<div class="tc-start">起始 ${fmtHM(t.startedAt || t.sessionStart)}</div>` : ''}
     ${remainDisplay}
   </div>`;
 }
@@ -520,10 +539,16 @@ function openStartDialog(t) {
       <input type="number" id="stDuration" value="${s.defaultDuration || 60}" min="5" step="5">
     </div>
     <div class="field">
+      <label>补记起始时间（选填，精确到分钟）</label>
+      <input type="time" id="stTime" step="60">
+      <p class="hint" style="margin-top:6px">忘记计时时可事后补填顾客实际到达时间，例如 14:30。填好后点「补记开始」，计时即从该时刻起算；留空直接点「开台」则按当前时间开始。</p>
+    </div>
+    <div class="field">
       <label>备注</label>
       <input type="text" id="stNotes" placeholder="选填">
     </div>`;
   const footer = `<button class="btn btn-secondary" data-act="cancel">取消</button>
+    <button class="btn btn-primary" data-act="backfill">补记开始</button>
     <button class="btn btn-success" data-act="start">开台</button>`;
   showModal(`开台 · ${tableLabel(t.areaId, t.number)}`, body, footer);
 
@@ -544,7 +569,7 @@ function openStartDialog(t) {
   $('#modalFooter').onclick = e => {
     const act = e.target.dataset.act;
     if (act === 'cancel') return closeModal();
-    if (act === 'start') {
+    if (act === 'start' || act === 'backfill') {
       const payment = paySel.value;
       const packageName = pkgSel.value;
       const people = parseInt($('#stPeople').value, 10) || 1;
@@ -554,18 +579,26 @@ function openStartDialog(t) {
         dur = parseInt($('#stDuration').value, 10) || 0;
         if (dur < 5) { toast('固定时长不能少于5分钟', 'error'); return; }
       }
+      let startTs = Date.now();
+      if (act === 'backfill') {
+        const ts = parseBackfillTime($('#stTime').value);
+        if (ts === null) { toast('请先填写补记的起始时间，如 14:30', 'error'); return; }
+        if (Date.now() - ts > 24 * 3600 * 1000) { toast('起始时间不能超过 24 小时前', 'error'); return; }
+        startTs = ts;
+      }
       t.status = 'running';
       t.payment = payment; t.packageName = packageName; t.notes = notes;
       t.people = people;
       t.expectedMinutes = dur;
-      t.sessionStart = Date.now();
+      t.startedAt = startTs;
+      t.sessionStart = startTs;
       t.accumulatedMs = 0;
       t.pausedAt = 0;
       saveState();
       closeModal();
       renderDashboard();
       updateTodaySummary();
-      toast(`${tableLabel(t.areaId, t.number)} 已开台`, 'success');
+      toast(`${tableLabel(t.areaId, t.number)} 已开台${act === 'backfill' ? '（补记自 ' + fmtHM(startTs) + '）' : ''}`, 'success');
     }
   };
 }
@@ -575,6 +608,8 @@ function openRunningDialog(t) {
   const rt = tableRuntime(t);
   const isPaused = t.status === 'paused';
   const isOvertime = rt.status === 'overtime';
+  const startVal = fmtHM(t.startedAt || t.sessionStart);
+  const timeVal = startVal === '—' ? fmtHM(Date.now()) : startVal;
   const body = `
     <div class="bill-section">
       <h4>当前使用</h4>
@@ -582,7 +617,16 @@ function openRunningDialog(t) {
       ${t.notes ? `<div class="bill-row"><span>备注</span><span>${escHtml(t.notes)}</span></div>` : ''}
       <div class="bill-row"><span>状态</span><span>${isPaused ? '已暂停' : isOvertime ? '已超时' : '使用中'}</span></div>
       <div class="bill-row"><span>已用时长</span><span>${msToHMS(rt.elapsedMs)}</span></div>
+      <div class="bill-row"><span>起始时间</span><span>${startVal}</span></div>
       ${t.expectedMinutes > 0 ? `<div class="bill-row"><span>${rt.overtime ? '已超时' : '剩余'}</span><span>${msToHMS(Math.abs(rt.remainingMs))}</span></div>` : ''}
+    </div>
+    <div class="field">
+      <label>补记起始时间（精确到分钟）</label>
+      <div class="bf-row">
+        <input type="time" id="bfTime" step="60" value="${timeVal}">
+        <button class="btn btn-primary btn-sm" id="bfApply">补记开始</button>
+      </div>
+      <p class="hint" style="margin-top:6px">事后补记：填顾客实际到达时间（如 14:30）。确认后已用时长立即按该时刻重新计算，并继续按真实时间递增；若该时刻晚于现在，自动按前一天处理。</p>
     </div>`;
   const footer = `
     <button class="btn btn-danger" data-act="clear">清空</button>
@@ -593,6 +637,20 @@ function openRunningDialog(t) {
       : '<button class="btn btn-secondary" data-act="pause">暂停</button>'}
     <button class="btn btn-success" data-act="checkout">结束</button>`;
   showModal(`${tableLabel(t.areaId, t.number)} · ${escHtml(t.packageName || '套餐')}`, body, footer);
+
+  // 补记起始时间：确认后立即按该时刻重算已用时长，并继续实时递增
+  const bfApply = $('#bfApply');
+  if (bfApply) {
+    bfApply.onclick = () => {
+      if (backfillStart(t, $('#bfTime').value)) {
+        closeModal();
+        renderDashboard();
+        updateTodaySummary();
+        openRunningDialog(t);
+        toast(`已按 ${fmtHM(t.startedAt)} 补记起始时间`, 'success');
+      }
+    };
+  }
 
   $('#modalFooter').onclick = e => {
     const act = e.target.dataset.act;
@@ -642,8 +700,30 @@ function resetTable(t) {
   t.status = 'idle';
   t.payment = ''; t.packageName = ''; t.notes = '';
   t.people = 1;
-  t.sessionStart = 0; t.accumulatedMs = 0; t.pausedAt = 0;
+  t.sessionStart = 0; t.startedAt = 0; t.accumulatedMs = 0; t.pausedAt = 0;
   t.expectedMinutes = 0;
+}
+
+/* 补记起始时间：把计时起点改为指定的过去时刻(精确到分钟)。
+   之后 tableRuntime() 用「当前时间 - 起始时间戳」实时算时长，与正常开台完全一致。 */
+function backfillStart(t, timeStr) {
+  const ts = parseBackfillTime(timeStr);
+  if (ts === null) { toast('请填写有效时间，如 14:30', 'error'); return false; }
+  const now = Date.now();
+  if (ts > now) { toast('起始时间不能晚于当前时间', 'error'); return false; }
+  if (now - ts > 24 * 3600 * 1000) { toast('起始时间不能超过 24 小时前', 'error'); return false; }
+  if (t.status === 'idle') {
+    t.status = 'running';
+    t.startedAt = ts; t.sessionStart = ts; t.accumulatedMs = 0; t.pausedAt = 0;
+  } else if (t.status === 'paused') {
+    // 暂停中：已累计时长直接记为「现在 - 起始时间」，保持暂停冻结、不再增长
+    t.startedAt = ts; t.accumulatedMs = now - ts; t.sessionStart = 0;
+  } else {
+    // 运行中/已超时：以指定时刻作为本段起点，elapsed = now - ts 并继续实时递增
+    t.startedAt = ts; t.sessionStart = ts; t.accumulatedMs = 0;
+  }
+  saveState();
+  return true;
 }
 
 /* 加时 */

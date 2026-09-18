@@ -1,5 +1,5 @@
 /* 拼豆计时管理系统 - Service Worker（离线缓存）
-   使主页 / v4 界面可安装、离线可用（旧版界面已归档到 archive/） */
+   使主页 / v4 界面可安装、离线可用 */
 const CACHE = 'pdb-cache-v3';
 const CORE = [
   './',

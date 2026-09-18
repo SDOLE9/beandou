@@ -1,7 +1,26 @@
+# 编辑器 / 系统
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+
+# 依赖与构建产物
 node_modules/
-.video_agent/
+dist/
+build/
+
+# 本机环境变量
+.env
+.env.local
+
+# 压缩包与日志
 *.zip
+*.log
+
+# 微信开发者工具按本机生成的私有配置（已移出版本控制）
+beandou-mp/project.private.config.json
+
+# 工具临时目录
+.video_agent/
+# WorkBuddy 工作区记录（Agent 记忆，不属于仓库内容）
+.workbuddy/
