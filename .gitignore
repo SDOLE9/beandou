@@ -23,4 +23,4 @@ beandou-mp/project.private.config.json
 # 工具临时目录
 .video_agent/
 # WorkBuddy 工作区记录（Agent 记忆，不属于仓库内容）
-.workbuddy/
+.workbuddy-ai/

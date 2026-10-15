@@ -4,19 +4,20 @@
 
 **纯前端实现，零依赖、零构建，数据只存在本机浏览器里，不上传任何服务器。**
 
-提供两种使用形态：
+提供三种使用形态：
 
-- 🌐 **网页版**：电脑 / 平板 / 手机浏览器都能用，可安装到桌面（PWA），支持离线
+- 📱 **手机端**：https://sdole9.github.io/beandou/ —— 营业日常入口，可安装到主屏幕（PWA），支持离线
+- 💻 **电脑端**：https://sdole9.github.io/beandou/glass-admin/ —— 电脑端专用，Liquid Glass 界面
 - 📱 **微信小程序版**：`beandou-mp/` 目录，用微信开发者工具导入即可
 
 ## 在线地址
 
-| 入口 | 地址 | 说明 |
+| 平台 | 地址 | 说明 |
 |------|------|------|
-| 主界面（推荐） | https://sdole9.github.io/beandou/ | 日常营业用这个 |
-| v4 玻璃卡片界面 | https://sdole9.github.io/beandou/index-v4.html | 同一套功能，玻璃卡片风格 |
+| 📱 手机端 | https://sdole9.github.io/beandou/ | 日常营业用这个，可安装到主屏幕 |
+| 💻 电脑端 | https://sdole9.github.io/beandou/glass-admin/ | 电脑端专用，Liquid Glass 界面 |
 
-两个页面共用同一份业务逻辑，只是外观不同，功能完全一致。
+两端功能一致，同一浏览器内共用同一套本机数据（localStorage）；不同设备间不互通，用系统设置里的导出 / 导入迁移。
 
 ## 核心功能
 
@@ -63,7 +64,7 @@
 
 ## 安装与运行
 
-### 网页版（本地预览）
+### 本地预览（手机端 / 电脑端）
 
 必须通过 HTTP 访问，直接双击打开 `file://` 会导致 Service Worker 和 PWA 不可用：
 
@@ -84,7 +85,7 @@ npm run serve
 
 ### 手机 / 平板安装到桌面（PWA）
 
-1. 用浏览器打开网页版地址
+1. 用浏览器打开手机端地址 <https://sdole9.github.io/beandou/>
 2. iOS：Safari → 分享 → 添加到主屏幕
 3. Android / 鸿蒙：Chrome 等浏览器 → 菜单 → 添加到主屏幕 / 安装应用
 
@@ -112,13 +113,13 @@ npm run serve
 
 ```
 ├── index.html            # 主界面（默认入口）
-├── index-v4.html         # v4 玻璃卡片风格界面（同上，仅多加载 styles-v4.css）
-├── app.js                # 网页版全部业务逻辑（两个页面共用）
-├── styles.css            # 主样式
-├── styles-v4.css         # v4 叠加样式（需配合 styles.css 使用）
-├── manifest.webmanifest  # PWA 清单
-├── sw.js                 # Service Worker（离线缓存）
-├── icon.jpg              # 应用图标（1920×1920）
+├── sw.js                 # Service Worker（离线缓存，须留在站点根目录）
+├── assets/               # 手机端静态资源
+│   ├── app.js            # 手机端全部业务逻辑
+│   ├── styles.css        # 主样式
+│   ├── manifest.webmanifest  # PWA 清单
+│   └── icon.jpg          # 应用图标（1920×1920）
+├── glass-admin/          # 电脑端专用入口（Liquid Glass 界面，自包含单文件，功能与手机端一致）
 ├── beandou-mp/           # 微信小程序源码
 │   ├── app.js / app.json / app.wxss   # 小程序入口与全局配置
 │   ├── project.config.json            # 开发者工具项目配置
@@ -145,11 +146,11 @@ npm run serve
 **换电脑 / 换手机怎么迁移数据？**
 在旧设备「系统设置 → 导出全部数据(备份)」得到 JSON 文件，在新设备「导入数据(恢复)」即可。
 
-**网页版和小程序的数据互通吗？**
-不互通。两者各自独立存储，需要迁移时用导出 / 导入。
+**手机端、电脑端、小程序的数据互通吗？**
+手机端与电脑端在同一浏览器内共用同一套本机数据；小程序独立存储。换设备都用导出 / 导入迁移。
 
 **改了代码但线上没生效？**
-静态资源带版本号缓存（`app.js?v=N`）。修改 `app.js` 或 `styles.css` 后必须同步递增 HTML 里的版本号，否则浏览器和 Service Worker 会继续用旧文件。用户侧可强制刷新或清除站点数据。
+静态资源带版本号缓存（`assets/app.js?v=N`）。修改 `assets/app.js` 或 `assets/styles.css` 后必须同步递增 HTML 里的版本号，否则浏览器和 Service Worker 会继续用旧文件。用户侧可强制刷新或清除站点数据。
 
 **为什么不能双击 HTML 直接打开？**
 Service Worker 与 PWA 安装要求安全上下文，`file://` 下不可用。请用上面的本地 HTTP 方式预览。

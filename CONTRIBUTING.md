@@ -20,17 +20,17 @@ npx --yes serve -l 8000 .
 
 ## 改动约定
 
-### 1. 改了 `app.js` 或 `styles.css`，必须同步递增缓存版本号
+### 1. 改了 `assets/app.js` 或 `assets/styles.css`，必须同步递增缓存版本号
 
-两个页面都通过带版本号的 query 引用静态资源，不改会导致线上继续用旧文件：
+页面通过带版本号的 query 引用静态资源，不改会导致线上继续用旧文件：
 
-- `index.html`、`index-v4.html` 中的 `app.js?v=N`、`styles.css?v=N` 各 +1
+- `index.html` 中的 `assets/app.js?v=N`、`assets/styles.css?v=N` 各 +1
 - 涉及离线缓存行为时，同步改 `sw.js` 里的 `const CACHE = 'pdb-cache-vN'`
 
-### 2. 两个页面共用同一份逻辑
+### 2. 业务逻辑集中在 `assets/app.js`
 
-`index.html` 与 `index-v4.html` 只差一行 `styles-v4.css` 引用，业务逻辑都在 `app.js`。
-改功能时改 `app.js` 即可，两版同时生效；不要只改其中一个页面。
+`index.html` 是唯一入口，业务逻辑都在 `assets/app.js`，改功能改 `assets/app.js` 即可。
+`glass-admin/index.html` 是电脑端专用的 Liquid Glass 版本：自包含单文件、不引用工程内其他文件，与手机端共用同一套 localStorage 数据（键 `pindou_system_v1`），改动它不会波及手机端入口。
 
 ### 3. 计时模型不要改成累加
 

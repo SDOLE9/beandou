@@ -1,0 +1,2032 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-card-size="compact">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f7f9fc">
+<meta name="description" content="拼豆计时管理系统 · Liquid Glass 风格桌台看板、使用记录、储存管理与系统设置">
+<title>拼豆计时管理系统 · Liquid Glass</title>
+<style>
+/* ============ 变量 ============ */
+:root{
+  color-scheme:light;
+  --bg-base:#F7F9FC;
+  --warm:#FFD29D;
+  --cool:#A0CFFF;
+  --primary:#2868D8;
+  --primary-strong:#1F55B8;
+  --primary-soft:rgba(40,104,216,.10);
+  --text:#202C40;
+  --text-2:#5B6D85;
+  --line:rgba(32,44,64,.12);
+  --glass-bg:linear-gradient(145deg,rgba(255,255,255,.78),rgba(255,255,255,.42));
+  --glass-bg-trans:linear-gradient(145deg,rgba(255,255,255,.58),rgba(255,255,255,.30));
+  --glass-bg-card:linear-gradient(145deg,rgba(255,255,255,.82),rgba(255,255,255,.52));
+  --glass-border:rgba(255,255,255,.82);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.84),0 18px 48px rgba(55,83,118,.14);
+  --blur-lg:blur(24px) saturate(130%);
+  --blur-sm:blur(10px) saturate(115%);
+  --r-surface:20px;
+  --r-ctrl:11px;
+  --s1:8px;--s2:12px;--s3:16px;--s4:24px;
+  --shadow-ctrl:0 1px 2px rgba(55,83,118,.08);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  /* 状态色（系统设置可改，由 JS 写入） */
+  --c-idle:#6B7280;--c-running:#22C55E;--c-paused:#3B82F6;--c-overtime:#EF4444;
+  /* 桌台卡片尺寸档位（系统设置可切，默认 compact） */
+  --tc-min:158px;--tc-gap:12px;--tc-pad:12px 13px;--tc-radius:15px;
+  --tc-name:13.5px;--tc-time:16.5px;--tc-cust:12px;
+  /* 弹窗宽度档位（系统设置可切） */
+  --modal-max:460px;
+}
+/* ============ 重置 ============ */
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg-base);color:var(--text);min-height:100vh;min-height:100dvh;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;font-size:14px;line-height:1.6}
+img,svg{display:block}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4,p{margin:0}
+ul{margin:0;padding:0;list-style:none}
+[hidden]{display:none !important}
+:focus{outline:none}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:6px}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* ============ 通用表单控件 ============ */
+input[type="text"],input[type="number"],input[type="time"],input[type="date"],input[type="search"],select,textarea{
+  width:100%;height:38px;border-radius:var(--r-ctrl);border:1px solid var(--line);
+  background:rgba(255,255,255,.94);padding:0 12px;font-size:13.5px;color:var(--text)}
+textarea{height:auto;min-height:76px;padding:9px 12px;resize:vertical;line-height:1.6}
+select{cursor:pointer;appearance:none;-webkit-appearance:none;padding-right:30px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235B6D85' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center}
+input::placeholder,textarea::placeholder{color:#8b9bad}
+input[type="text"]:focus-visible,input[type="number"]:focus-visible,input[type="time"]:focus-visible,
+input[type="date"]:focus-visible,input[type="search"]:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(40,104,216,.18)}
+input[type="checkbox"]{width:17px;height:17px;accent-color:var(--primary);cursor:pointer;flex:none}
+input[type="color"]{width:58px;height:38px;padding:3px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(255,255,255,.94);cursor:pointer}
+input[type="range"]{accent-color:var(--primary);width:100%;cursor:pointer}
+/* ============ 环境光背景 ============ */
+.ambient{position:fixed;inset:0;z-index:-1;pointer-events:none;background-color:var(--bg-base);
+  background-image:
+    radial-gradient(70rem 45rem at -8% 6%,rgba(255,210,157,.46),transparent 55%),
+    radial-gradient(70rem 44rem at 108% 9%,rgba(160,207,255,.50),transparent 58%);}
+/* ============ 总体布局 ============ */
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100dvh}
+/* ============ 侧栏 ============ */
+.sidebar{position:sticky;top:0;height:100dvh;display:flex;flex-direction:column;gap:var(--s3);
+  padding:20px 14px;background:var(--glass-bg-trans);border-right:1px solid rgba(255,255,255,.65);
+  -webkit-backdrop-filter:var(--blur-lg);backdrop-filter:var(--blur-lg);box-shadow:var(--glass-shadow)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 6px 6px}
+.brand-logo{width:38px;height:38px;flex:none;border-radius:12px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(160deg,#4a83e6,#2868d8);box-shadow:0 6px 14px rgba(40,104,216,.32)}
+.brand-logo svg{width:22px;height:22px}
+.brand-name{font-weight:700;font-size:15px;line-height:1.25;letter-spacing:.2px}
+.brand-sub{display:block;font-size:11px;font-weight:500;color:var(--text-2);letter-spacing:.2px}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:var(--r-ctrl);
+  font-size:14px;color:var(--text-2);text-align:left;transition:background .15s ease,color .15s ease}
+.nav-item svg{width:18px;height:18px;flex:none}
+.nav-item:hover{background:rgba(255,255,255,.55);color:var(--text)}
+.nav-item.is-active{background:rgba(255,255,255,.92);color:var(--primary);font-weight:600;
+  box-shadow:var(--shadow-ctrl),inset 0 0 0 1px rgba(255,255,255,.9)}
+.nav-count{margin-left:auto;font-size:12px;font-weight:600;color:var(--text-2);background:rgba(32,44,64,.06);
+  border-radius:999px;padding:1px 8px;font-variant-numeric:tabular-nums;flex:none}
+.nav-item.is-active .nav-count{color:var(--primary-strong);background:var(--primary-soft)}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.side-card{display:flex;gap:10px;align-items:center;padding:10px;border-radius:var(--r-ctrl);
+  background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.7)}
+.avatar{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:linear-gradient(150deg,#ffd29d,#ffb37a);color:#7a4a12}
+.avatar svg{width:19px;height:19px}
+.side-who{font-size:13px;font-weight:600;line-height:1.3}
+.side-role{font-size:11.5px;color:var(--text-2)}
+.clock{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.side-note{font-size:11.5px;color:var(--text-2);line-height:1.55;padding:0 4px}
+/* ============ 主区 ============ */
+.main{min-width:0;padding:26px 32px 56px}
+.main-inner{width:100%;max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:var(--s3)}
+.view{display:flex;flex-direction:column;gap:var(--s3)}
+.crumb{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);margin-bottom:8px}
+.crumb svg{width:12px;height:12px;opacity:.7}
+.crumb [aria-current]{color:var(--text-2);font-weight:600}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:var(--s3);flex-wrap:wrap}
+.page-title{font-size:21px;font-weight:700;letter-spacing:.2px}
+.page-desc{margin-top:6px;font-size:13.5px;color:var(--text-2);max-width:620px;line-height:1.6}
+.page-note{margin-top:10px;display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);
+  background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.75);padding:4px 10px;border-radius:999px;
+  font-variant-numeric:tabular-nums}
+/* ============ 按钮 ============ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:38px;padding:0 16px;
+  border-radius:var(--r-ctrl);font-size:13.5px;font-weight:600;white-space:nowrap;
+  border:1px solid var(--line);background:rgba(255,255,255,.86);color:var(--text);box-shadow:var(--shadow-ctrl);
+  transition:transform .15s ease,filter .15s ease,border-color .15s ease,background .15s ease}
+.btn svg{width:15px;height:15px;flex:none}
+.btn:hover{border-color:rgba(40,104,216,.35)}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:linear-gradient(180deg,#3d78e2,#2868d8);border-color:transparent;color:#fff;
+  box-shadow:0 8px 18px rgba(40,104,216,.30),inset 0 1px 0 rgba(255,255,255,.28)}
+.btn-primary:hover{filter:brightness(1.06);border-color:transparent}
+.btn-success{background:linear-gradient(180deg,#34c76d,#1ea34f);border-color:transparent;color:#fff;
+  box-shadow:0 8px 18px rgba(30,163,79,.26),inset 0 1px 0 rgba(255,255,255,.26)}
+.btn-success:hover{filter:brightness(1.06);border-color:transparent}
+.btn-danger{background:rgba(255,255,255,.9);border-color:rgba(194,69,45,.4);color:#C2452D}
+.btn-danger:hover{background:rgba(194,69,45,.07);border-color:rgba(194,69,45,.55)}
+.btn-sm{height:30px;padding:0 11px;font-size:12.5px;border-radius:9px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--r-ctrl);
+  border:1px solid var(--line);background:rgba(255,255,255,.8);font-size:13px;font-weight:600;color:var(--text);
+  box-shadow:var(--shadow-ctrl);transition:border-color .15s ease,color .15s ease}
+.btn-ghost:hover{border-color:rgba(40,104,216,.4);color:var(--primary-strong)}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+/* ============ 紧凑统计 ============ */
+.stats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:var(--s2)}
+.stat{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:16px;text-align:left;
+  background:var(--glass-bg-card);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--blur-sm);backdrop-filter:var(--blur-sm);
+  transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.stat:hover{transform:translateY(-1px)}
+.stat-ico{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;color:var(--text-2);
+  background:rgba(32,44,64,.06)}
+.stat-ico svg{width:17px;height:17px}
+.stat-txt{display:flex;flex-direction:column;min-width:0}
+.stat-num{font-size:19px;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat-label{font-size:12px;color:var(--text-2);white-space:nowrap}
+.stat[data-stat="all"] .stat-ico{background:rgba(40,104,216,.10);color:var(--primary)}
+.stat[data-stat="idle"] .stat-ico{background:rgba(107,114,128,.12);color:#4B5563}
+.stat[data-stat="running"] .stat-ico{background:rgba(34,197,94,.14);color:#177B3F}
+.stat[data-stat="paused"] .stat-ico{background:rgba(59,130,246,.14);color:#1E5FB8}
+.stat[data-stat="overtime"] .stat-ico{background:rgba(239,68,68,.13);color:#C2452D}
+.stat[aria-pressed="true"]{border-color:rgba(40,104,216,.45);
+  box-shadow:inset 0 0 0 1px rgba(40,104,216,.22),var(--glass-shadow)}
+/* ============ 工具条 ============ */
+.toolbar{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;padding:var(--s2);border-radius:16px;
+  background:var(--glass-bg-trans);border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--blur-lg);backdrop-filter:var(--blur-lg)}
+.sel{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2);white-space:nowrap}
+.sel select{height:38px;border-radius:var(--r-ctrl);border:1px solid var(--line);
+  background-color:rgba(255,255,255,.94);padding:0 30px 0 12px;font-size:13.5px;color:var(--text)}
+.sel select:focus-visible{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(40,104,216,.18)}
+.sel input[type="date"]{width:auto}
+.hint-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:0 4px;font-size:12.5px;color:var(--text-2);min-height:20px;font-variant-numeric:tabular-nums}
+/* ============ 空态 ============ */
+.empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:48px 24px;text-align:center;
+  border-radius:var(--r-surface);background:var(--glass-bg-card);border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--blur-sm);backdrop-filter:var(--blur-sm)}
+.empty-ico{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;color:#8fa0b6;
+  background:rgba(255,255,255,.75);border:1px solid var(--glass-border)}
+.empty-ico svg{width:24px;height:24px}
+.empty h2{font-size:15px;font-weight:650}
+.empty p{font-size:13px;color:var(--text-2);max-width:340px;line-height:1.6}
+/* ============ Toast ============ */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:90;
+  display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:999px;max-width:calc(100vw - 32px);
+  background:rgba(255,255,255,.92);border:1px solid var(--glass-border);
+  box-shadow:0 16px 40px rgba(55,83,118,.22);font-size:13px;font-weight:550;color:var(--text);
+  -webkit-backdrop-filter:var(--blur-lg);backdrop-filter:var(--blur-lg)}
+.toast svg{width:16px;height:16px;color:#1E8A4C;flex:none}
+.toast.err svg.toast-ok{display:none}
+.toast:not(.err) svg.toast-err{display:none}
+.toast.err svg{color:#C2452D}
+.toast.show{animation:toast-in .28s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+/* ============ 弹窗 ============ */
+dialog{border:0;padding:0;background:none;max-height:calc(100dvh - 32px);max-width:calc(100vw - 32px)}
+dialog::backdrop{background:rgba(24,36,56,.30);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.dlg{width:min(var(--modal-max,460px),calc(100vw - 32px));max-height:calc(100dvh - 32px);
+  display:flex;flex-direction:column;border-radius:22px;
+  background:rgba(255,255,255,.94);border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 32px 80px rgba(35,55,90,.28),inset 0 1px 0 rgba(255,255,255,.9);
+  -webkit-backdrop-filter:blur(22px) saturate(135%);backdrop-filter:blur(22px) saturate(135%)}
+.dlg-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px 0;flex:none}
+.dlg-head h2{font-size:16.5px;font-weight:700;letter-spacing:.2px}
+.dlg-x{width:32px;height:32px;flex:none;border-radius:10px;display:grid;place-items:center;
+  color:var(--text-2);font-size:18px;line-height:1}
+.dlg-x:hover{background:rgba(32,44,64,.06);color:var(--text)}
+.dlg-body{padding:14px 20px 0;overflow:auto}
+.dlg-foot{padding:16px 20px 20px;display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;flex:none}
+.field{margin-top:14px}
+.field:first-child{margin-top:0}
+.field label{display:block;font-size:13px;font-weight:600;margin-bottom:6px}
+.field .hint,.hint{font-size:12px;color:var(--text-2);line-height:1.6}
+.field .hint{margin-top:6px}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.row-2 .field{margin-top:0}
+.bill-section{background:rgba(255,255,255,.62);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.bill-section h4{font-size:12.5px;color:var(--text-2);font-weight:600;margin-bottom:8px}
+.bill-row{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:3px 0}
+.bill-row span:first-child{color:var(--text-2);flex:none}
+.bill-row span:last-child{text-align:right;font-weight:550;word-break:break-all}
+.confirm-title{font-weight:600;font-size:14px}
+.confirm-msg{margin-top:6px;font-size:13px;color:var(--text-2);line-height:1.6}
+.bf-row{display:flex;gap:10px;align-items:center}
+.bf-row input{flex:1;min-width:0}
+/* ============ 桌台看板 ============ */
+.board{display:flex;flex-direction:column;gap:var(--s4)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-left:auto;font-size:12.5px;color:var(--text-2)}
+.legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:5px;vertical-align:1px}
+.dot.d-idle{background:var(--c-idle)}
+.dot.d-running{background:var(--c-running)}
+.dot.d-paused{background:var(--c-paused)}
+.dot.d-overtime{background:var(--c-overtime)}
+.area-section{display:flex;flex-direction:column;gap:var(--s2)}
+.area-head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:0 2px}
+.area-name{font-size:15px;font-weight:700;letter-spacing:.2px}
+.area-count{font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.table-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(var(--tc-min),1fr));gap:var(--tc-gap)}
+.grid-empty{grid-column:1/-1;color:var(--text-2);font-size:13px;padding:18px;text-align:center;
+  border:1px dashed var(--line);border-radius:14px}
+/* ---- 桌台卡片（玻璃） ---- */
+.table-card{position:relative;display:flex;flex-direction:column;gap:4px;padding:var(--tc-pad);
+  border-radius:var(--tc-radius);text-align:left;overflow:hidden;min-height:118px;
+  background-color:rgba(255,255,255,.78);
+  background-image:linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.5)),linear-gradient(150deg,var(--st-wash,transparent),transparent 62%);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--blur-sm);backdrop-filter:var(--blur-sm);
+  transition:transform .18s ease,box-shadow .18s ease}
+.table-card::before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;
+  border-radius:0 3px 3px 0;background:var(--stc,var(--c-idle))}
+.table-card:hover{transform:translateY(-2px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.84),0 22px 52px rgba(55,83,118,.18)}
+.table-card:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.table-card.st-idle{--stc:var(--c-idle);--st-wash:rgba(107,114,128,.05)}
+.table-card.st-running{--stc:var(--c-running);--st-wash:rgba(34,197,94,.09)}
+.table-card.st-paused{--stc:var(--c-paused);--st-wash:rgba(59,130,246,.09)}
+.table-card.st-overtime{--stc:var(--c-overtime);--st-wash:rgba(239,68,68,.10)}
+.tc-head{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.tc-name{font-size:var(--tc-name);font-weight:700;letter-spacing:.1px;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.tc-status{flex:none;font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
+  color:#fff;background:var(--stc)}
+.tc-cust{font-size:var(--tc-cust);font-weight:550;color:var(--text);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.tc-notes{font-size:11.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-time{margin-top:auto;padding-top:8px;font-family:var(--mono);font-size:var(--tc-time);font-weight:700;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:var(--text)}
+.st-overtime .tc-time{color:#C2452D}
+.tc-start{font-size:11px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.tc-remain{font-size:11.5px;font-weight:600;font-variant-numeric:tabular-nums}
+.tc-remain.warn{color:#B45309}
+.tc-remain.over{color:#C2452D}
+/* 卡片大小档位 */
+html[data-card-size="compact"]{--tc-min:158px;--tc-gap:12px;--tc-pad:12px 13px;--tc-radius:15px;
+  --tc-name:13.5px;--tc-time:16.5px;--tc-cust:12px}
+html[data-card-size="standard"]{--tc-min:240px;--tc-gap:16px;--tc-pad:16px;--tc-radius:18px;
+  --tc-name:15px;--tc-time:19px;--tc-cust:13px}
+html[data-card-size="large"]{--tc-min:320px;--tc-gap:20px;--tc-pad:20px;--tc-radius:22px;
+  --tc-name:16.5px;--tc-time:23px;--tc-cust:13.5px}
+/* ============ 汇总卡片（使用记录） ============ */
+.summary-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--s2)}
+.sum-card{padding:14px 16px;border-radius:16px;background:var(--glass-bg-card);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--blur-sm);backdrop-filter:var(--blur-sm)}
+.sum-card .label{font-size:12px;color:var(--text-2)}
+.sum-card .value{margin-top:2px;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.2}
+/* ============ 数据表格 ============ */
+.table-wrap{border-radius:var(--r-surface);background:var(--glass-bg-card);border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);-webkit-backdrop-filter:var(--blur-sm);backdrop-filter:var(--blur-sm);overflow:auto}
+table.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:680px}
+.data-table th{text-align:left;font-size:12px;font-weight:600;color:var(--text-2);padding:11px 14px;
+  border-bottom:1px solid var(--line);background:rgba(255,255,255,.5);white-space:nowrap}
+.data-table td{padding:11px 14px;border-bottom:1px solid rgba(32,44,64,.07);vertical-align:top;line-height:1.5}
+.data-table tbody tr:last-child td{border-bottom:0}
+.data-table tbody tr:hover{background:rgba(255,255,255,.45)}
+.data-table .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.data-table .muted{color:var(--text-2)}
+.empty-row td{text-align:center;color:var(--text-2);padding:30px 14px}
+.action-btns{display:flex;gap:6px;flex-wrap:wrap}
+/* 储存状态徽章 */
+.status-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;
+  padding:2px 10px;border-radius:999px;white-space:nowrap}
+.status-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.status-badge.stored{background:rgba(34,197,94,.13);color:#177B3F}
+.status-badge.picked{background:rgba(32,44,64,.08);color:var(--text-2)}
+.status-badge.overdue{background:rgba(239,68,68,.13);color:#C2452D}
+/* ============ 系统设置 ============ */
+.settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--s3);align-items:start}
+.settings-card{padding:20px;border-radius:var(--r-surface);background:var(--glass-bg-card);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow);
+  -webkit-backdrop-filter:var(--blur-sm);backdrop-filter:var(--blur-sm);
+  display:flex;flex-direction:column;gap:14px}
+.settings-card.wide{grid-column:1/-1}
+.settings-card h3{font-size:15px;font-weight:700;letter-spacing:.2px;display:flex;align-items:center;
+  gap:10px;flex-wrap:wrap}
+.settings-card h3 .btn{margin-left:auto}
+.form-row{display:grid;grid-template-columns:158px minmax(0,1fr);gap:12px;align-items:center}
+.form-row>label{font-size:13px;color:var(--text-2);line-height:1.4}
+.form-row .with-note{display:flex;align-items:center;gap:10px}
+.wp-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.wp-mode{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
+.wp-mode select{width:auto;min-width:150px}
+.wp-overlay{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
+.wp-overlay input[type="range"]{width:120px}
+.wp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.wp-item{position:relative;border-radius:12px;overflow:hidden;border:2px solid transparent;
+  aspect-ratio:1/1;cursor:pointer;background:rgba(255,255,255,.6);padding:0}
+.wp-item img{width:100%;height:100%;object-fit:cover}
+.wp-item.active{border-color:var(--primary)}
+.wp-item:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.wp-remove{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;
+  background:rgba(20,30,45,.55);color:#fff;display:grid;place-items:center;font-size:13px;line-height:1}
+.wp-empty{font-size:12.5px;color:var(--text-2);padding:16px;border:1px dashed var(--line);
+  border-radius:12px;text-align:center;line-height:1.6}
+.area-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2fr) auto;gap:10px;align-items:center}
+.area-empty{font-size:12.5px;color:var(--text-2)}
+.data-actions{display:flex;flex-wrap:wrap;gap:10px}
+/* ============ 响应式 ============ */
+@media (max-width:1120px){
+  .app{grid-template-columns:216px minmax(0,1fr)}
+  .main{padding:22px 22px 48px}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:880px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .sidebar{position:static;height:auto;flex-direction:row;align-items:center;gap:14px;padding:12px 14px;
+    border-right:0;border-bottom:1px solid rgba(255,255,255,.65);overflow-x:auto;scrollbar-width:none}
+  .sidebar::-webkit-scrollbar{display:none}
+  .brand{padding:0;flex:none}
+  .brand-sub{display:none}
+  .nav{flex-direction:row;gap:4px;flex:none}
+  .nav-item{white-space:nowrap}
+  .side-foot{display:none}
+  .main{padding:18px 16px 44px}
+  .settings-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:720px){
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .page-head{align-items:flex-start}
+  .legend{margin-left:0;width:100%}
+  .summary-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .sum-card{padding:11px 12px}
+  .sum-card .value{font-size:18px}
+  .stat-num{font-size:17px}
+  .form-row{grid-template-columns:minmax(0,1fr);gap:6px}
+  .row-2{grid-template-columns:1fr}
+}
+@media (max-width:420px){
+  .stat-label{font-size:11.5px}
+  .summary-row{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+/* ============ 降级：减少动效 ============ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+/* ============ 降级：降低透明度 ============ */
+@media (prefers-reduced-transparency:reduce){
+  .ambient{background:#F4F7FB}
+  .sidebar,.toolbar,.stat,.empty,.toast,.page-note,.side-card,.table-card,.table-wrap,.sum-card,.settings-card{
+    background:rgba(255,255,255,.97) !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important;
+    border-color:rgba(32,44,64,.18) !important;box-shadow:0 8px 24px rgba(55,83,118,.10) !important}
+  .table-card{background-image:none !important}
+  .dlg{background:#fff !important;-webkit-backdrop-filter:none !important;backdrop-filter:none !important;
+    border-color:rgba(32,44,64,.22) !important}
+  .tag,.nav-count{background:rgba(255,255,255,.95) !important}
+  dialog::backdrop{background:rgba(24,36,56,.5)}
+}
+/* ============ 降级：提高对比度 ============ */
+@media (prefers-contrast:more){
+  :root{--text:#101828;--text-2:#3D4E63;--line:rgba(32,44,64,.35)}
+  .sidebar,.toolbar,.stat,.empty,.toast,.dlg,.table-card,.table-wrap,.sum-card,.settings-card{
+    border-color:rgba(32,44,64,.42) !important}
+  .page-desc,.side-note,.side-role,.hint,.area-count,.empty p{color:#2C3B52}
+  .stat[aria-pressed="true"]{border-color:rgba(40,104,216,.65) !important}
+  .tc-remain.warn{color:#8C4A08}
+  .tc-remain.over{color:#A3201B}
+}
+/* ============ 降级：不支持 backdrop-filter ============ */
+@supports not ((-webkit-backdrop-filter:blur(4px)) or (backdrop-filter:blur(4px))){
+  .sidebar,.toolbar,.stat,.empty,.toast,.table-card,.table-wrap,.sum-card,.settings-card{
+    background:rgba(255,255,255,.95);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .table-card{background-image:none}
+  .dlg{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none}
+  dialog::backdrop{background:rgba(24,36,56,.40)}
+}
+</style>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<div class="app">
+  <!-- ============ 左侧导航 ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="3.1"/></svg>
+      </span>
+      <span class="brand-name">拼豆计时系统<span class="brand-sub">桌台 · 计时 · 台帐</span></span>
+    </div>
+    <nav class="nav" aria-label="系统导航">
+      <button type="button" class="nav-item is-active" data-view="dashboard" aria-current="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>
+        全部拼豆计时管理系统<span class="nav-count" id="cntRunning">0</span>
+      </button>
+      <button type="button" class="nav-item" data-view="sales">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4.6" width="12" height="15.8" rx="2.4"/><path d="M9.4 4.6V3.4h5.2v1.2"/><path d="M9.2 10.4h5.6M9.2 13.6h5.6M9.2 16.8h3.4"/></svg>
+        使用记录<span class="nav-count" id="cntSales">0</span>
+      </button>
+      <button type="button" class="nav-item" data-view="storage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.4l8 4.2v8.8l-8 4.2-8-4.2V7.6z"/><path d="M4.2 7.6L12 11.8l7.8-4.2M12 11.8v8.6"/></svg>
+        储存管理<span class="nav-count" id="cntStorage">0</span>
+      </button>
+      <button type="button" class="nav-item" data-view="settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.1"/><path d="M12 2.9v2.5M12 18.6v2.5M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M2.9 12h2.5M18.6 12h2.5M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+        系统设置
+      </button>
+    </nav>
+    <div class="side-foot">
+      <div class="side-card">
+        <span class="avatar" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.4" r="3.4"/><path d="M4.8 20c1.2-3.5 3.9-5.1 7.2-5.1s6 1.6 7.2 5.1"/></svg>
+        </span>
+        <span>
+          <span class="side-who" id="shopNameSide">拼豆工坊</span><br>
+          <span class="side-role">系统时间 <span class="clock" id="clock">--:--:--</span></span>
+        </span>
+      </div>
+      <p class="side-note">数据自动保存在本机浏览器（localStorage），清除缓存会丢失，请定期到「系统设置」导出备份。</p>
+    </div>
+  </aside>
+
+  <!-- ============ 主内容区 ============ -->
+  <main class="main">
+    <div class="main-inner">
+      <!-- ============ 视图一：桌台看板 ============ -->
+      <section class="view" id="view-dashboard">
+        <header class="page-head">
+          <div>
+            <nav class="crumb" aria-label="所在路径">
+              <span>拼豆计时管理系统</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+              <span aria-current="page">桌台看板</span>
+            </nav>
+            <h1 class="page-title">桌台看板</h1>
+            <p class="page-desc">点击桌台即可开台、补记起点、暂停、加时、换套餐或结束计时；已用时长实时递增，状态颜色可在系统设置中调整。</p>
+          </div>
+          <p class="page-note" id="todaySummary">今日记录 0 条 · 在用 0 桌</p>
+        </header>
+
+        <section class="stats" aria-label="桌台统计（点击可按状态筛选）">
+          <button type="button" class="stat" data-stat="all" aria-pressed="true">
+            <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></span>
+            <span class="stat-txt"><span class="stat-num" id="stAll">0</span><span class="stat-label">全部桌台</span></span>
+          </button>
+          <button type="button" class="stat" data-stat="idle" aria-pressed="false">
+            <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="3.4"/></svg></span>
+            <span class="stat-txt"><span class="stat-num" id="stIdle">0</span><span class="stat-label">空闲</span></span>
+          </button>
+          <button type="button" class="stat" data-stat="running" aria-pressed="false">
+            <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M10.2 8.8l5 3.2-5 3.2z"/></svg></span>
+            <span class="stat-txt"><span class="stat-num" id="stRunning">0</span><span class="stat-label">使用中</span></span>
+          </button>
+          <button type="button" class="stat" data-stat="paused" aria-pressed="false">
+            <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M9.8 8.8v6.4M14.2 8.8v6.4"/></svg></span>
+            <span class="stat-txt"><span class="stat-num" id="stPaused">0</span><span class="stat-label">已暂停</span></span>
+          </button>
+          <button type="button" class="stat" data-stat="overtime" aria-pressed="false">
+            <span class="stat-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.2L2.9 19.5h18.2z"/><path d="M12 10v4.2"/><path d="M12 16.9h.01"/></svg></span>
+            <span class="stat-txt"><span class="stat-num" id="stOvertime">0</span><span class="stat-label">已超时</span></span>
+          </button>
+        </section>
+
+        <section class="toolbar" aria-label="看板筛选">
+          <label class="sel">区域
+            <select id="areaFilter"></select>
+          </label>
+          <label class="sel">状态
+            <select id="statusFilter">
+              <option value="all">全部状态</option>
+              <option value="idle">空闲</option>
+              <option value="running">使用中</option>
+              <option value="paused">已暂停</option>
+              <option value="overtime">超时</option>
+            </select>
+          </label>
+          <div class="legend" aria-label="状态图例">
+            <span class="legend-item"><i class="dot d-idle"></i>空闲</span>
+            <span class="legend-item"><i class="dot d-running"></i>使用中</span>
+            <span class="legend-item"><i class="dot d-paused"></i>暂停</span>
+            <span class="legend-item"><i class="dot d-overtime"></i>超时</span>
+          </div>
+        </section>
+
+        <div class="hint-row"><span id="boardHint" aria-live="polite"></span></div>
+
+        <section id="board" class="board" aria-label="桌台看板"></section>
+      </section>
+
+      <!-- ============ 视图二：使用记录 ============ -->
+      <section class="view" id="view-sales" hidden>
+        <header class="page-head">
+          <div>
+            <nav class="crumb" aria-label="所在路径">
+              <span>拼豆计时管理系统</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+              <span aria-current="page">使用记录</span>
+            </nav>
+            <h1 class="page-title">使用记录</h1>
+            <p class="page-desc">每次「结束计时」都会生成一条记录：可切换日期核对当日开台数、客流与每桌的套餐、时长明细。</p>
+          </div>
+        </header>
+
+        <section class="toolbar" aria-label="日期切换">
+          <label class="sel">日期
+            <input type="date" id="salesDateFilter">
+          </label>
+          <div class="btn-group">
+            <button type="button" class="btn btn-sm" id="salesPrevDay">前一天</button>
+            <button type="button" class="btn btn-sm" id="salesToday">今天</button>
+            <button type="button" class="btn btn-sm" id="salesNextDay">后一天</button>
+          </div>
+        </section>
+
+        <section class="summary-row" id="salesSummary" aria-label="当日汇总"></section>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>序号</th><th>结束时间</th><th>桌台</th><th>支付/套餐</th>
+                <th>时长</th><th>人数</th><th>备注</th>
+              </tr>
+            </thead>
+            <tbody id="salesTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ 视图三：储存管理 ============ -->
+      <section class="view" id="view-storage" hidden>
+        <header class="page-head">
+          <div>
+            <nav class="crumb" aria-label="所在路径">
+              <span>拼豆计时管理系统</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+              <span aria-current="page">储存管理</span>
+            </nav>
+            <h1 class="page-title">储存管理</h1>
+            <p class="page-desc">登记顾客暂存的作品与联系方式；超过预计取走日期会自动标为逾期，取走后点「取走」归档。</p>
+          </div>
+          <button type="button" class="btn btn-primary" id="addStorage">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            新增储存记录
+          </button>
+        </header>
+
+        <section class="toolbar" aria-label="储存筛选">
+          <label class="sel">状态
+            <select id="storageFilter">
+              <option value="all">全部</option>
+              <option value="stored">储存中</option>
+              <option value="picked">已取走</option>
+            </select>
+          </label>
+        </section>
+
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>序号</th><th>顾客</th><th>联系方式</th><th>作品名称</th>
+                <th>储存日期</th><th>预计取走</th><th>已存天数</th><th>状态</th><th>备注</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="storageTbody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ============ 视图四：系统设置 ============ -->
+      <section class="view" id="view-settings" hidden>
+        <header class="page-head">
+          <div>
+            <nav class="crumb" aria-label="所在路径">
+              <span>拼豆计时管理系统</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+              <span aria-current="page">系统设置</span>
+            </nav>
+            <h1 class="page-title">系统设置</h1>
+            <p class="page-desc">店铺信息、默认计时规则、状态配色、背景壁纸、区域桌台与数据备份，全部保存在本机浏览器。</p>
+          </div>
+        </header>
+
+        <div class="settings-grid">
+          <div class="settings-card">
+            <h3>基本信息</h3>
+            <div class="form-row"><label for="setShopName">店铺名称</label><input type="text" id="setShopName"></div>
+            <div class="form-row"><label for="setDefaultDuration">默认时长（分钟，0 = 开放计时）</label><input type="number" id="setDefaultDuration" min="0" step="5"></div>
+            <div class="form-row"><label for="setOvertimeWarn">到期前提醒（分钟，0 = 关闭）</label><input type="number" id="setOvertimeWarn" min="0" step="1"></div>
+            <div class="form-row"><label for="setVoiceAlert">超时语音提醒</label><span class="with-note"><input type="checkbox" id="setVoiceAlert"><span class="hint">到点后语音播报「XX号桌时间已到」</span></span></div>
+            <div class="form-row"><label for="setModalSize">弹窗大小</label>
+              <select id="setModalSize">
+                <option value="compact">紧凑（小框，适合平板）</option>
+                <option value="standard">标准</option>
+                <option value="large">大</option>
+              </select>
+            </div>
+            <div class="form-row"><label for="setCardSize">桌台卡片大小</label>
+              <select id="setCardSize">
+                <option value="compact">紧凑（小卡，一屏更多桌台）</option>
+                <option value="standard">标准</option>
+                <option value="large">大</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <h3>状态颜色</h3>
+            <div class="form-row"><label for="colorIdle"><i class="dot d-idle"></i>空闲</label><input type="color" id="colorIdle"></div>
+            <div class="form-row"><label for="colorRunning"><i class="dot d-running"></i>使用中</label><input type="color" id="colorRunning"></div>
+            <div class="form-row"><label for="colorPaused"><i class="dot d-paused"></i>暂停</label><input type="color" id="colorPaused"></div>
+            <div class="form-row"><label for="colorOvertime"><i class="dot d-overtime"></i>超时</label><input type="color" id="colorOvertime"></div>
+            <button type="button" class="btn btn-sm" id="resetColors" style="align-self:flex-start">恢复默认配色</button>
+          </div>
+
+          <div class="settings-card wide">
+            <h3>背景壁纸</h3>
+            <div class="wp-row">
+              <label class="btn btn-sm wp-upload-label">
+                + 上传图片
+                <input type="file" id="wpFileInput" accept="image/*" multiple hidden>
+              </label>
+              <button type="button" class="btn btn-sm" id="wpShuffle">随机换一张</button>
+              <span class="wp-mode">轮播
+                <select id="wpMode">
+                  <option value="off">关闭轮播（固定第一张）</option>
+                  <option value="startup">每次打开自动换</option>
+                  <option value="hourly">每小时自动换</option>
+                </select>
+              </span>
+              <span class="wp-overlay">遮罩浓度
+                <input type="range" id="wpOverlay" min="0" max="80" value="35" step="5">
+                <span id="wpOverlayVal">35%</span>
+              </span>
+              <button type="button" class="btn btn-sm btn-danger" id="wpReset">恢复默认</button>
+            </div>
+            <div id="wpPreview" class="wp-grid"></div>
+          </div>
+
+          <div class="settings-card wide">
+            <h3>区域与桌台管理
+              <button type="button" class="btn btn-sm btn-primary" id="addArea">+ 添加区域</button>
+            </h3>
+            <div id="areaManager" class="area-manager"></div>
+          </div>
+
+          <div class="settings-card wide">
+            <h3>数据管理</h3>
+            <div class="data-actions">
+              <button type="button" class="btn" id="exportData">导出全部数据（备份）</button>
+              <button type="button" class="btn" id="importData">导入数据（恢复）</button>
+              <input type="file" id="importFile" accept=".json" hidden>
+              <button type="button" class="btn btn-danger" id="clearToday">清空今日数据</button>
+              <button type="button" class="btn btn-danger" id="clearAll">清空全部数据</button>
+            </div>
+            <p class="hint">数据保存在本机浏览器中，清除浏览器缓存会丢失数据，请定期导出备份；导入会覆盖当前全部数据。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<!-- ============ 通用弹窗 ============ -->
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <div class="dlg">
+    <header class="dlg-head">
+      <h2 id="dlgTitle">标题</h2>
+      <button type="button" class="dlg-x" id="dlgClose" aria-label="关闭弹窗">×</button>
+    </header>
+    <div class="dlg-body" id="dlgBody"></div>
+    <footer class="dlg-foot" id="dlgFoot"></footer>
+  </div>
+</dialog>
+
+<!-- ============ Toast 提示 ============ -->
+<div class="toast" id="toast" role="status" aria-live="polite" hidden>
+  <svg class="toast-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M8.4 12.4l2.4 2.4 4.8-5.2"/></svg>
+  <svg class="toast-err" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" hidden><circle cx="12" cy="12" r="8.4"/><path d="M12 8v4.6"/><path d="M12 15.8h.01"/></svg>
+  <span class="toast-text"></span>
+</div>
+<script>
+(function () {
+  "use strict";
+  /* ============ 工具函数 ============ */
+  var $ = function (s, c) { return (c || document).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function pad2(n) { return String(n).padStart(2, "0"); }
+  function todayStr(d) {
+    d = d || new Date();
+    return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+  }
+  function nowStr() {
+    var d = new Date();
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes()) + ":" + pad2(d.getSeconds());
+  }
+  function parseDate(str) {
+    if (!str) return null;
+    var p = String(str).split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+  function msToHMS(ms) {
+    if (ms < 0) ms = 0;
+    var totalSec = Math.floor(ms / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    if (h > 0) return h + "时" + pad2(m) + "分" + pad2(s) + "秒";
+    return pad2(m) + "分" + pad2(s) + "秒";
+  }
+  function fmtHM(ts) {
+    if (!ts) return "—";
+    var d = new Date(ts);
+    return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  /* 把 "HH:MM" 解析为过去的一个时间戳；若晚于当前时刻则按前一天处理（跨天补记） */
+  function parseBackfillTime(str) {
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(str || "").trim());
+    if (!m) return null;
+    var hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
+    if (hh > 23 || mm > 59) return null;
+    var now = new Date();
+    var d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hh, mm, 0, 0);
+    if (d.getTime() > now.getTime()) d.setDate(d.getDate() - 1);
+    return d.getTime();
+  }
+  function daysBetween(d1, d2) {
+    var a = new Date(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    var b = new Date(d2.getFullYear(), d2.getMonth(), d2.getDate());
+    return Math.round((b - a) / 86400000);
+  }
+  function shiftSalesDate(delta) {
+    var cur = parseDate($("#salesDateFilter").value) || new Date();
+    cur.setDate(cur.getDate() + delta);
+    $("#salesDateFilter").value = todayStr(cur);
+    renderSales();
+  }
+
+  /* ============ 默认配置 ============ */
+  var DEFAULTS = {
+    shopName: "拼豆工坊",
+    defaultDuration: 0,      // 0 = 开放计时; >0 = 固定分钟
+    overtimeWarn: 5,         // 到期前 5 分钟黄色提醒
+    voiceAlert: true,
+    colors: { idle: "#6B7280", running: "#22C55E", paused: "#3B82F6", overtime: "#EF4444" },
+    areas: [
+      { id: "A", name: "A区", tables: [1, 2, 3, 4, 5, 6] },
+      { id: "B", name: "B区", tables: [1, 2, 3, 4] }
+    ],
+    wallpaperMode: "off",    // off / startup / hourly
+    wallpaperOverlay: 35,    // 遮罩浓度 0-80
+    wpLastRotateTs: 0,
+    modalSize: "standard",   // compact / standard / large
+    cardSize: "compact"      // compact / standard / large
+  };
+  var MODAL_SIZES = { compact: "380px", standard: "460px", large: "560px" };
+  var CARD_SIZES = ["compact", "standard", "large"];
+  function applyModalSize() {
+    var px = MODAL_SIZES[state.settings.modalSize] || MODAL_SIZES.standard;
+    document.documentElement.style.setProperty("--modal-max", px);
+  }
+  function applyCardSize() {
+    var s = CARD_SIZES.indexOf(state.settings.cardSize) > -1 ? state.settings.cardSize : "compact";
+    document.documentElement.dataset.cardSize = s;
+  }
+
+  /* ============ 套餐配置 ============ */
+  var BASE_PACKAGES = [
+    "双人1小时¥18.8", "单人1小时¥9.8",
+    "双人2小时¥34.8", "单人2小时¥18.8",
+    "双人3小时¥47.8", "单人3小时¥26.8",
+    "双人不限时(工作日)¥49.8", "单人不限时(工作日)¥28.8",
+    "双人不限时(周末/节假日)¥58.8", "单人不限时(周末/节假日)¥38.8"
+  ];
+  var PACKAGES = {
+    "支付宝": BASE_PACKAGES,
+    "微信": BASE_PACKAGES,
+    "抖音": ["开业活动9.9¥9.9"].concat(BASE_PACKAGES)
+  };
+  var PAYMENTS = ["抖音", "微信", "支付宝"];
+
+  /* ============ 持久化 ============ */
+  var STORE_KEY = "pindou_system_v1";
+  var WP_STORE_KEY = "pindou_wallpapers_v1";
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (raw) {
+        var s = JSON.parse(raw);
+        s.settings = Object.assign({}, DEFAULTS, s.settings || {});
+        s.settings.colors = Object.assign({}, DEFAULTS.colors, (s.settings || {}).colors || {});
+        s.tables = s.tables || [];
+        s.sales = s.sales || [];
+        s.storage = s.storage || [];
+        s.seq = s.seq || { sales: 0, storage: 0 };
+        return s;
+      }
+    } catch (e) { console.warn("加载状态失败", e); }
+    var init = {
+      settings: JSON.parse(JSON.stringify(DEFAULTS)),
+      tables: [], sales: [], storage: [], seq: { sales: 0, storage: 0 }
+    };
+    return init;
+  }
+  function saveState() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
+    catch (e) { console.error("保存失败", e); showToast("数据保存失败，请检查存储空间", "error"); }
+  }
+  function loadWallpapers() {
+    try {
+      var raw = localStorage.getItem(WP_STORE_KEY);
+      if (!raw) return { list: [], active: null };
+      return JSON.parse(raw);
+    } catch (e) { return { list: [], active: null }; }
+  }
+  function saveWallpapers(wpState) {
+    try { localStorage.setItem(WP_STORE_KEY, JSON.stringify(wpState)); }
+    catch (e) { console.error(e); showToast("壁纸保存失败，图片可能过大", "error"); }
+  }
+
+  var state = loadState();
+  var wpState = loadWallpapers();
+  var currentView = "dashboard";
+  var tickHandle = null;
+
+  /* ============ Toast ============ */
+  var toastTimer = null;
+  function showToast(msg, type) {
+    var el = $("#toast");
+    $(".toast-text", el).textContent = msg;
+    el.classList.toggle("err", type === "error");
+    el.hidden = false;
+    el.classList.remove("show");
+    void el.offsetWidth;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.hidden = true; }, 2600);
+  }
+
+  /* ============ 通用弹窗 ============ */
+  var dlg = $("#dlg"), dlgTitle = $("#dlgTitle"), dlgBody = $("#dlgBody"), dlgFoot = $("#dlgFoot");
+  function openDialog(title, bodyHtml, footerHtml) {
+    dlgTitle.textContent = title;
+    dlgBody.innerHTML = bodyHtml;
+    dlgFoot.innerHTML = footerHtml || "";
+    if (typeof dlg.showModal === "function") { dlg.showModal(); }
+    else { dlg.setAttribute("open", ""); }
+    requestAnimationFrame(function () {
+      var first = dlgBody.querySelector("input,select,textarea");
+      if (first) { try { first.focus({ preventScroll: false }); } catch (e) { first.focus(); } }
+    });
+  }
+  function closeDialog() { if (dlg.open) { dlg.close(); } else { dlg.removeAttribute("open"); } }
+  function confirmDialog(title, msg, onOk) {
+    openDialog("请确认",
+      '<p class="confirm-title">' + esc(title) + "</p>" +
+      '<p class="confirm-msg">' + esc(msg) + "</p>",
+      '<button type="button" class="btn" data-act="cancel">取消</button>' +
+      '<button type="button" class="btn btn-danger" data-act="ok">确认</button>');
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (act === "cancel") { closeDialog(); return; }
+      if (act === "ok") { closeDialog(); onOk(); }
+    };
+  }
+  $("#dlgClose").addEventListener("click", closeDialog);
+  dlg.addEventListener("click", function (e) { if (e.target === dlg) { closeDialog(); } });
+  /* 注意：不监听 close 事件清空 dlgFoot.onclick ——
+     close() 的 close 事件在部分浏览器中是异步触发的，
+     会晚于「关闭后立即打开下一个弹窗」时重新绑定的 onclick，导致点击失效。 */
+
+  /* ============ 壁纸引擎 ============ */
+  var ambient = $(".ambient");
+  function activeWallpaper() {
+    for (var i = 0; i < wpState.list.length; i++) {
+      if (wpState.list[i].id === wpState.active) return wpState.list[i];
+    }
+    return wpState.list[0] || null;
+  }
+  function pickRandomWallpaper() {
+    if (wpState.list.length === 0) return null;
+    if (wpState.list.length === 1) return wpState.list[0];
+    var others = wpState.list.filter(function (w) { return w.id !== wpState.active; });
+    return others[Math.floor(Math.random() * others.length)];
+  }
+  function applyWallpaper() {
+    var overlay = parseInt(state.settings.wallpaperOverlay, 10);
+    if (isNaN(overlay)) overlay = DEFAULTS.wallpaperOverlay;
+    var low = Math.round(overlay / 100 * 0.68 * 100) / 100;
+    var high = Math.round(overlay / 100 * 100) / 100;
+    var wp = activeWallpaper();
+    if (!wp) { ambient.style.backgroundImage = ""; return; }
+    ambient.style.backgroundImage =
+      "linear-gradient(rgba(240,244,250," + low + "),rgba(232,238,246," + high + ")), url('" + wp.dataUrl + "')";
+  }
+  function rotateWallpaperIfNeeded() {
+    var mode = state.settings.wallpaperMode || "off";
+    if (mode === "off" || wpState.list.length < 2) return;
+    if (mode === "startup") {
+      var today = todayStr();
+      if (state.settings.wpLastRotateTs !== today) {
+        var next = pickRandomWallpaper();
+        if (next) { wpState.active = next.id; state.settings.wpLastRotateTs = today; saveWallpapers(wpState); saveState(); }
+      }
+    } else if (mode === "hourly") {
+      var bucket = Math.floor(Date.now() / 3600000);
+      if (Number(state.settings.wpLastRotateTs || 0) !== bucket) {
+        var next2 = pickRandomWallpaper();
+        if (next2) { wpState.active = next2.id; state.settings.wpLastRotateTs = bucket; saveWallpapers(wpState); saveState(); }
+      }
+    }
+  }
+  function fileToCompressedDataUrl(file, maxSide, quality) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = reject;
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = reject;
+        img.onload = function () {
+          var w = img.width, h = img.height;
+          if (Math.max(w, h) > maxSide) {
+            var r = maxSide / Math.max(w, h);
+            w = Math.round(w * r); h = Math.round(h * r);
+          }
+          var canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+          try { resolve(canvas.toDataURL("image/jpeg", quality)); }
+          catch (e) { try { resolve(canvas.toDataURL("image/png")); } catch (e2) { reject(e2); } }
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function addWallpaperFiles(fileList) {
+    var files = Array.prototype.slice.call(fileList);
+    var added = 0, skipped = 0;
+    var chain = Promise.resolve();
+    files.forEach(function (f) {
+      if (!f.type || f.type.indexOf("image/") !== 0) { skipped++; return; }
+      chain = chain.then(function () {
+        return fileToCompressedDataUrl(f, 1600, 0.82).then(function (dataUrl) {
+          if (dataUrl.length > 2 * 1024 * 1024) { skipped++; return; }
+          var id = "wp_" + Date.now() + "_" + Math.random().toString(36).slice(2, 7);
+          wpState.list.push({ id: id, name: f.name.slice(0, 60), dataUrl: dataUrl });
+          if (!wpState.active) wpState.active = id;
+          added++;
+        })["catch"](function () { skipped++; });
+      });
+    });
+    chain.then(function () {
+      saveWallpapers(wpState);
+      renderWallpaperPreview();
+      applyWallpaper();
+      if (added) {
+        showToast("已添加 " + added + " 张壁纸" + (skipped ? "，跳过 " + skipped + " 张（过大或非图片）" : ""), "success");
+      } else { showToast("图片添加失败（可能过大）", "error"); }
+    });
+  }
+  function removeWallpaper(id) {
+    wpState.list = wpState.list.filter(function (w) { return w.id !== id; });
+    if (wpState.active === id) { wpState.active = wpState.list[0] ? wpState.list[0].id : null; }
+    saveWallpapers(wpState);
+    renderWallpaperPreview();
+    applyWallpaper();
+    showToast("已删除该壁纸", "success");
+  }
+  function setActiveWallpaper(id) {
+    wpState.active = id;
+    saveWallpapers(wpState);
+    renderWallpaperPreview();
+    applyWallpaper();
+  }
+  function resetWallpaper() {
+    wpState = { list: [], active: null };
+    saveWallpapers(wpState);
+    state.settings.wallpaperMode = DEFAULTS.wallpaperMode;
+    state.settings.wallpaperOverlay = DEFAULTS.wallpaperOverlay;
+    saveState();
+    renderWallpaperPreview();
+    renderSettings();
+    applyWallpaper();
+    showToast("已恢复默认壁纸", "success");
+  }
+  function renderWallpaperPreview() {
+    var host = $("#wpPreview");
+    if (!host) return;
+    var activeId = wpState.active;
+    if (wpState.list.length === 0) {
+      host.innerHTML = '<div class="wp-empty">还没有自定义壁纸，点击上方「+ 上传图片」选择图片；不上传时使用系统默认的柔光背景。</div>';
+      return;
+    }
+    host.innerHTML = wpState.list.map(function (w) {
+      return '<button type="button" class="wp-item' + (w.id === activeId ? " active" : "") + '" data-id="' + w.id + '" title="' + esc(w.name) + '（点击设为当前）">' +
+        '<img src="' + w.dataUrl + '" alt="' + esc(w.name) + '">' +
+        '<span class="wp-remove" data-remove="' + w.id + '" title="删除">×</span></button>';
+    }).join("");
+    Array.prototype.forEach.call(host.querySelectorAll(".wp-item"), function (el) {
+      el.addEventListener("click", function (e) {
+        if (e.target.dataset.remove) { return; }
+        setActiveWallpaper(el.dataset.id);
+        showToast("已切换壁纸", "success");
+      });
+    });
+    Array.prototype.forEach.call(host.querySelectorAll(".wp-remove"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        confirmDialog("删除壁纸？", "确认删除这张壁纸？不会影响你本地原图。", function () { removeWallpaper(btn.dataset.remove); });
+      });
+    });
+  }
+
+  /* ============ 颜色与尺寸档位 ============ */
+  function applyColors() {
+    var root = document.documentElement.style;
+    root.setProperty("--c-idle", state.settings.colors.idle);
+    root.setProperty("--c-running", state.settings.colors.running);
+    root.setProperty("--c-paused", state.settings.colors.paused);
+    root.setProperty("--c-overtime", state.settings.colors.overtime);
+  }
+
+  /* ============ 桌台运行时状态 ============ */
+  function tableId(areaId, num) { return areaId + "-" + num; }
+  function tableLabel(areaId, num) {
+    var area = null;
+    state.settings.areas.forEach(function (a) { if (a.id === areaId) area = a; });
+    return (area ? area.name : areaId) + " " + num + "号桌";
+  }
+  /* 确保所有配置中的桌台都有运行时对象 */
+  function syncTables() {
+    var ids = {};
+    state.settings.areas.forEach(function (area) {
+      area.tables.forEach(function (num) {
+        var id = tableId(area.id, num);
+        ids[id] = true;
+        var found = null;
+        state.tables.forEach(function (t) { if (t.id === id) found = t; });
+        if (!found) {
+          state.tables.push({
+            id: id, areaId: area.id, number: num,
+            status: "idle",
+            payment: "", packageName: "",
+            people: 1,
+            sessionStart: 0,      // 本段（最后一次继续）开始时间戳
+            startedAt: 0,         // 本次开台的实际起始时间戳（补记时 = 指定的过去时刻）
+            accumulatedMs: 0,     // 已累计活跃时长（不含当前段）
+            pausedAt: 0,
+            expectedMinutes: 0,   // 0 = 开放计时
+            notes: ""
+          });
+        }
+      });
+    });
+    // 删除配置中已不存在的桌台（空闲中才删，使用中保留运行态直到结束）
+    state.tables = state.tables.filter(function (t) { return ids[t.id] || t.status !== "idle"; });
+  }
+  function getTable(id) {
+    for (var i = 0; i < state.tables.length; i++) {
+      if (state.tables[i].id === id) return state.tables[i];
+    }
+    return null;
+  }
+  /* 计算桌台实时数据 */
+  function tableRuntime(t) {
+    var now = Date.now();
+    var elapsedMs = t.accumulatedMs;
+    var status = t.status;
+    if (status === "running") { elapsedMs += now - t.sessionStart; }
+    var remainingMs = null;
+    var overtime = false;
+    if (t.expectedMinutes > 0) {
+      remainingMs = t.expectedMinutes * 60000 - elapsedMs;
+      if (remainingMs <= 0 && status !== "idle") {
+        status = "overtime";
+        overtime = true;
+      }
+    }
+    return { elapsedMs: elapsedMs, remainingMs: remainingMs, overtime: overtime, status: status };
+  }
+  function countByStatus(tables) {
+    var c = { idle: 0, running: 0, paused: 0, overtime: 0 };
+    tables.forEach(function (t) { var rt = tableRuntime(t); c[rt.status] = (c[rt.status] || 0) + 1; });
+    return c;
+  }
+
+  /* ============ 计时引擎 ============ */
+  var lastAlertedIds = {};
+  function startTick() {
+    if (tickHandle) { clearInterval(tickHandle); }
+    tickHandle = setInterval(tick, 1000);
+    tick();
+  }
+  function tick() {
+    $("#clock").textContent = nowStr();
+    if (currentView === "dashboard") {
+      var changed = false;
+      Array.prototype.forEach.call(document.querySelectorAll(".table-card"), function (card) {
+        var t = getTable(card.dataset.id);
+        if (!t) { return; }
+        if (card.dataset.status !== tableRuntime(t).status) { changed = true; }
+      });
+      if (changed) { renderDashboard(); } else { updateCardTimes(); }
+    }
+    checkVoiceAlert();
+  }
+  /* 原地更新时间文本，避免整树重渲导致 hover/焦点抖动 */
+  function updateCardTimes() {
+    Array.prototype.forEach.call(document.querySelectorAll(".table-card"), function (card) {
+      var t = getTable(card.dataset.id);
+      if (!t || t.status === "idle") { return; }
+      var rt = tableRuntime(t);
+      var timeEl = card.querySelector(".tc-time");
+      if (timeEl) { timeEl.textContent = msToHMS(rt.elapsedMs); }
+      var remEl = card.querySelector(".tc-remain");
+      if (remEl) {
+        if (t.expectedMinutes > 0) {
+          if (rt.overtime) {
+            remEl.className = "tc-remain over";
+            remEl.textContent = "超时 " + msToHMS(-rt.remainingMs);
+          } else {
+            var warn = state.settings.overtimeWarn > 0 && rt.remainingMs <= state.settings.overtimeWarn * 60000;
+            remEl.className = "tc-remain" + (warn ? " warn" : "");
+            remEl.textContent = "剩余 " + msToHMS(rt.remainingMs);
+          }
+        }
+      }
+    });
+  }
+  function checkVoiceAlert() {
+    if (!state.settings.voiceAlert) { return; }
+    var toAlert = [];
+    state.tables.forEach(function (t) {
+      if (t.status === "idle") { return; }
+      var rt = tableRuntime(t);
+      if (rt.overtime && !lastAlertedIds[t.id]) {
+        toAlert.push(t);
+        lastAlertedIds[t.id] = true;
+      } else if (!rt.overtime) {
+        delete lastAlertedIds[t.id];
+      }
+    });
+    if (toAlert.length) {
+      var msg = toAlert.map(function (t) { return tableLabel(t.areaId, t.number) + "时间已到"; }).join("，");
+      speak(msg);
+    }
+  }
+  function speak(text) {
+    try {
+      if ("speechSynthesis" in window) {
+        var u = new SpeechSynthesisUtterance(text);
+        u.lang = "zh-CN"; u.rate = 1;
+        window.speechSynthesis.speak(u);
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  /* ============ 视图一：桌台看板 ============ */
+  var board = $("#board"), areaFilter = $("#areaFilter"), statusFilter = $("#statusFilter");
+  var STATUS_TEXT = { idle: "空闲", running: "使用中", paused: "已暂停", overtime: "已超时" };
+  function renderTableCard(t) {
+    var rt = tableRuntime(t);
+    var label = tableLabel(t.areaId, t.number);
+    var statusText = STATUS_TEXT[rt.status];
+    var timeDisplay = "--:--";
+    var remain = "";
+    if (t.status !== "idle") {
+      timeDisplay = msToHMS(rt.elapsedMs);
+      if (t.expectedMinutes > 0) {
+        if (rt.overtime) {
+          remain = '<span class="tc-remain over">超时 ' + msToHMS(-rt.remainingMs) + "</span>";
+        } else {
+          var warn = state.settings.overtimeWarn > 0 && rt.remainingMs <= state.settings.overtimeWarn * 60000;
+          remain = '<span class="tc-remain' + (warn ? " warn" : "") + '">剩余 ' + msToHMS(rt.remainingMs) + "</span>";
+        }
+      }
+    }
+    var cust = t.status === "idle"
+      ? "—"
+      : esc((t.payment || "") + " " + (t.packageName || "未选套餐"));
+    var notes = (t.status !== "idle" && t.notes)
+      ? '<span class="tc-notes" title="' + esc(t.notes) + '">' + esc(t.notes) + "</span>" : "";
+    var startLine = (t.status !== "idle" && (t.startedAt || t.sessionStart))
+      ? '<span class="tc-start">起始 ' + fmtHM(t.startedAt || t.sessionStart) + "</span>" : "";
+    var aria = label + "，" + statusText +
+      (t.status === "idle" ? "，点击开台" : "，已用 " + msToHMS(rt.elapsedMs) + "，点击管理");
+    return '<button type="button" class="table-card st-' + rt.status + '" data-id="' + t.id + '" data-status="' + rt.status + '" aria-label="' + esc(aria) + '">' +
+      '<span class="tc-head"><span class="tc-name">' + esc(label) + '</span><span class="tc-status">' + statusText + "</span></span>" +
+      '<span class="tc-cust">' + cust + "</span>" +
+      notes +
+      '<span class="tc-time">' + timeDisplay + "</span>" +
+      startLine +
+      remain +
+      "</button>";
+  }
+  function renderDashboard() {
+    syncTables();
+    var areaF = areaFilter.value || "all";
+    var statusF = statusFilter.value || "all";
+
+    // 区域下拉同步
+    var sig = JSON.stringify(state.settings.areas.map(function (a) { return a.id; }));
+    if (areaFilter.options.length === 0 || areaFilter.dataset.last !== sig) {
+      areaFilter.innerHTML = '<option value="all">全部区域</option>' +
+        state.settings.areas.map(function (a) { return '<option value="' + a.id + '">' + esc(a.name) + "</option>"; }).join("");
+      areaFilter.dataset.last = sig;
+    }
+
+    var areas = state.settings.areas;
+    if (areaF !== "all") { areas = areas.filter(function (a) { return a.id === areaF; }); }
+
+    var scopedTables = [];
+    areas.forEach(function (area) {
+      area.tables.forEach(function (n) {
+        var t = getTable(tableId(area.id, n));
+        if (t) { scopedTables.push(t); }
+      });
+    });
+
+    var html = areas.map(function (area) {
+      var tables = area.tables.map(function (n) { return getTable(tableId(area.id, n)); }).filter(Boolean);
+      var filtered = tables.filter(function (t) {
+        if (statusF === "all") { return true; }
+        return tableRuntime(t).status === statusF;
+      });
+      var counts = countByStatus(tables);
+      return '<section class="area-section">' +
+        '<div class="area-head"><h3 class="area-name">' + esc(area.name) + "</h3>" +
+        '<span class="area-count">共 ' + tables.length + " 桌 · 空闲 " + counts.idle +
+        " · 使用 " + (counts.running + counts.overtime) + " · 暂停 " + counts.paused + "</span></div>" +
+        '<div class="table-grid">' +
+        (filtered.map(renderTableCard).join("") || '<p class="grid-empty">该筛选下无桌台</p>') +
+        "</div></section>";
+    }).join("");
+
+    if (!html) {
+      board.innerHTML =
+        '<div class="empty"><span class="empty-ico" aria-hidden="true">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg></span>' +
+        "<h2>还没有桌台</h2>" +
+        "<p>先到「系统设置」里添加区域与桌台，这里就会出现可点击的桌台卡片。</p>" +
+        '<button type="button" class="btn btn-primary" data-goto="settings">去系统设置</button></div>';
+    } else {
+      board.innerHTML = html;
+    }
+
+    // 统计卡（反映当前区域范围）
+    var c = countByStatus(scopedTables);
+    $("#stAll").textContent = scopedTables.length;
+    $("#stIdle").textContent = c.idle;
+    $("#stRunning").textContent = c.running;
+    $("#stPaused").textContent = c.paused;
+    $("#stOvertime").textContent = c.overtime;
+    Array.prototype.forEach.call(document.querySelectorAll(".stat"), function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.stat === statusF));
+    });
+
+    // 结果提示
+    var hint = $("#boardHint");
+    var totalAll = 0;
+    state.settings.areas.forEach(function (a) { totalAll += a.tables.length; });
+    hint.textContent = (statusF === "all" && areaF === "all")
+      ? "共 " + totalAll + " 桌 · " + state.settings.areas.length + " 个区域"
+      : "已筛选出 " + scopedTables.filter(function (t) {
+          return statusF === "all" || tableRuntime(t).status === statusF;
+        }).length + " / " + totalAll + " 桌";
+    updateBadges();
+  }
+  function updateBadges() {
+    var running = 0;
+    state.tables.forEach(function (t) {
+      var rt = tableRuntime(t);
+      if (rt.status === "running" || rt.status === "overtime") { running++; }
+    });
+    $("#cntRunning").textContent = running;
+    var today = todayStr();
+    var todayCount = 0;
+    state.sales.forEach(function (s) { if (s.date === today) { todayCount++; } });
+    $("#cntSales").textContent = todayCount;
+    var stored = 0;
+    state.storage.forEach(function (r) { if (r.status === "stored") { stored++; } });
+    $("#cntStorage").textContent = stored;
+    $("#todaySummary").textContent = "今日记录 " + todayCount + " 条 · 在用 " + running + " 桌";
+  }
+  function updateShopName() {
+    $("#shopNameSide").textContent = state.settings.shopName || "拼豆工坊";
+  }
+  /* ============ 桌台操作面板 ============ */
+  function openTableAction(id) {
+    var t = getTable(id);
+    if (!t) { return; }
+    if (t.status === "idle") { openStartDialog(t); } else { openRunningDialog(t); }
+  }
+
+  /* ---- 开台 ---- */
+  function openStartDialog(t) {
+    var s = state.settings;
+    var body =
+      '<div class="field"><label for="stPayment">支付方式</label>' +
+      '<select id="stPayment">' + PAYMENTS.map(function (p) { return '<option value="' + p + '">' + p + "</option>"; }).join("") + "</select></div>" +
+      '<div class="field"><label for="stPackage">套餐</label><select id="stPackage"></select></div>' +
+      '<div class="row-2">' +
+      '<div class="field"><label for="stPeople">人数</label><input type="number" id="stPeople" value="1" min="1"></div>' +
+      '<div class="field"><label for="stMode">计时模式</label>' +
+      '<select id="stMode"><option value="0"' + (s.defaultDuration === 0 ? " selected" : "") + ">开放计时</option>" +
+      '<option value="1"' + (s.defaultDuration > 0 ? " selected" : "") + ">固定时长</option></select></div></div>" +
+      '<div class="field" id="durWrap" hidden><label for="stDuration">时长（分钟）</label>' +
+      '<input type="number" id="stDuration" value="' + (s.defaultDuration || 60) + '" min="5" step="5"></div>' +
+      '<div class="field"><label for="stTime">补记起始时间（选填，精确到分钟）</label>' +
+      '<input type="time" id="stTime" step="60">' +
+      '<p class="hint">忘记计时时可事后补填顾客实际到达时间，例如 14:30。填好后点「补记开始」，计时即从该时刻起算；留空直接点「开台」则按当前时间开始。</p></div>' +
+      '<div class="field"><label for="stNotes">备注</label>' +
+      '<input type="text" id="stNotes" placeholder="选填，如：两位大学生 / 已付定金"></div>';
+    var footer =
+      '<button type="button" class="btn" data-act="cancel">取消</button>' +
+      '<button type="button" class="btn" data-act="backfill">补记开始</button>' +
+      '<button type="button" class="btn btn-success" data-act="start">开台</button>';
+    openDialog("开台 · " + tableLabel(t.areaId, t.number), body, footer);
+
+    var modeSel = $("#stMode"), durWrap = $("#durWrap");
+    modeSel.onchange = function () { durWrap.hidden = modeSel.value !== "1"; };
+    modeSel.onchange();
+
+    var paySel = $("#stPayment"), pkgSel = $("#stPackage");
+    function fillPackages() {
+      var pkgs = PACKAGES[paySel.value] || [];
+      pkgSel.innerHTML = pkgs.map(function (p) { return '<option value="' + esc(p) + '">' + esc(p) + "</option>"; }).join("");
+    }
+    paySel.onchange = fillPackages;
+    fillPackages();
+
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (act === "cancel") { closeDialog(); return; }
+      if (act === "start" || act === "backfill") {
+        var payment = paySel.value;
+        var packageName = pkgSel.value;
+        var people = parseInt($("#stPeople").value, 10) || 1;
+        var notes = $("#stNotes").value.trim();
+        var dur = 0;
+        if (modeSel.value === "1") {
+          dur = parseInt($("#stDuration").value, 10) || 0;
+          if (dur < 5) { showToast("固定时长不能少于 5 分钟", "error"); return; }
+        }
+        var startTs = Date.now();
+        if (act === "backfill") {
+          var ts = parseBackfillTime($("#stTime").value);
+          if (ts === null) { showToast("请先填写补记的起始时间，如 14:30", "error"); return; }
+          if (Date.now() - ts > 24 * 3600 * 1000) { showToast("起始时间不能超过 24 小时前", "error"); return; }
+          startTs = ts;
+        }
+        t.status = "running";
+        t.payment = payment; t.packageName = packageName; t.notes = notes;
+        t.people = people;
+        t.expectedMinutes = dur;
+        t.startedAt = startTs;
+        t.sessionStart = startTs;
+        t.accumulatedMs = 0;
+        t.pausedAt = 0;
+        saveState();
+        closeDialog();
+        renderDashboard();
+        showToast(tableLabel(t.areaId, t.number) + " 已开台" + (act === "backfill" ? "（补记自 " + fmtHM(startTs) + "）" : ""), "success");
+      }
+    };
+  }
+
+  /* ---- 使用中：暂停 / 继续 / 加时 / 换套餐 / 结束 / 清空 ---- */
+  function openRunningDialog(t) {
+    var rt = tableRuntime(t);
+    var isPaused = t.status === "paused";
+    var isOvertime = rt.status === "overtime";
+    var startVal = fmtHM(t.startedAt || t.sessionStart);
+    var timeVal = startVal === "—" ? fmtHM(Date.now()) : startVal;
+    var stateText = isPaused ? "已暂停" : isOvertime ? "已超时" : "使用中";
+    var body =
+      '<div class="bill-section"><h4>当前使用</h4>' +
+      '<div class="bill-row"><span>支付/套餐</span><span>' + esc((t.payment || "—") + " " + (t.packageName || "—")) + "</span></div>" +
+      (t.notes ? '<div class="bill-row"><span>备注</span><span>' + esc(t.notes) + "</span></div>" : "") +
+      '<div class="bill-row"><span>状态</span><span>' + stateText + "</span></div>" +
+      '<div class="bill-row"><span>已用时长</span><span>' + msToHMS(rt.elapsedMs) + "</span></div>" +
+      '<div class="bill-row"><span>起始时间</span><span>' + startVal + "</span></div>" +
+      (t.expectedMinutes > 0
+        ? '<div class="bill-row"><span>' + (rt.overtime ? "已超时" : "剩余") + "</span><span>" + msToHMS(Math.abs(rt.remainingMs)) + "</span></div>"
+        : "") +
+      "</div>" +
+      '<div class="field" style="margin-top:14px"><label for="bfTime">补记起始时间（精确到分钟）</label>' +
+      '<div class="bf-row"><input type="time" id="bfTime" step="60" value="' + timeVal + '">' +
+      '<button type="button" class="btn btn-primary" id="bfApply">补记开始</button></div>' +
+      '<p class="hint">事后补记：填顾客实际到达时间（如 14:30）。确认后已用时长立即按该时刻重新计算，并继续按真实时间递增；若该时刻晚于现在，自动按前一天处理。</p></div>';
+    var footer =
+      '<button type="button" class="btn btn-danger" data-act="clear">清空</button>' +
+      '<button type="button" class="btn" data-act="extend">加时</button>' +
+      '<button type="button" class="btn" data-act="repackage">换套餐</button>' +
+      (isPaused
+        ? '<button type="button" class="btn btn-primary" data-act="resume">继续计时</button>'
+        : '<button type="button" class="btn" data-act="pause">暂停</button>') +
+      '<button type="button" class="btn btn-success" data-act="checkout">结束</button>';
+    openDialog(tableLabel(t.areaId, t.number) + " · " + esc(t.packageName || "套餐"), body, footer);
+
+    $("#bfApply").onclick = function () {
+      if (backfillStart(t, $("#bfTime").value)) {
+        closeDialog();
+        renderDashboard();
+        openRunningDialog(t);
+        showToast("已按 " + fmtHM(t.startedAt) + " 补记起始时间", "success");
+      }
+    };
+
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (!act) { return; }
+      if (act === "pause") { pauseTable(t); }
+      else if (act === "resume") { resumeTable(t); }
+      else if (act === "extend") { extendTable(t); }
+      else if (act === "repackage") { repackageTable(t); }
+      else if (act === "clear") { clearTable(t); }
+      else if (act === "checkout") { checkoutTable(t); }
+    };
+  }
+  function pauseTable(t) {
+    if (t.status !== "running") { return; }
+    t.accumulatedMs += Date.now() - t.sessionStart;
+    t.sessionStart = 0;
+    t.status = "paused";
+    t.pausedAt = Date.now();
+    saveState();
+    closeDialog();
+    renderDashboard();
+    showToast("已暂停", "success");
+  }
+  function resumeTable(t) {
+    if (t.status !== "paused") { return; }
+    t.status = "running";
+    t.sessionStart = Date.now();
+    t.pausedAt = 0;
+    saveState();
+    closeDialog();
+    renderDashboard();
+    showToast("已继续计时", "success");
+  }
+  function clearTable(t) {
+    confirmDialog("确认清空该桌台？",
+      "将放弃「" + tableLabel(t.areaId, t.number) + "」当前记录，桌台恢复空闲。此操作不可撤销。",
+      function () {
+        resetTable(t);
+        saveState();
+        closeDialog();
+        renderDashboard();
+        showToast("已清空", "success");
+      });
+  }
+  function resetTable(t) {
+    t.status = "idle";
+    t.payment = ""; t.packageName = ""; t.notes = "";
+    t.people = 1;
+    t.sessionStart = 0; t.startedAt = 0; t.accumulatedMs = 0; t.pausedAt = 0;
+    t.expectedMinutes = 0;
+  }
+  /* 补记起始时间：把计时起点改为指定的过去时刻 */
+  function backfillStart(t, timeStr) {
+    var ts = parseBackfillTime(timeStr);
+    if (ts === null) { showToast("请填写有效时间，如 14:30", "error"); return false; }
+    var now = Date.now();
+    if (ts > now) { showToast("起始时间不能晚于当前时间", "error"); return false; }
+    if (now - ts > 24 * 3600 * 1000) { showToast("起始时间不能超过 24 小时前", "error"); return false; }
+    if (t.status === "idle") {
+      t.status = "running";
+      t.startedAt = ts; t.sessionStart = ts; t.accumulatedMs = 0; t.pausedAt = 0;
+    } else if (t.status === "paused") {
+      t.startedAt = ts; t.accumulatedMs = now - ts; t.sessionStart = 0;
+    } else {
+      t.startedAt = ts; t.sessionStart = ts; t.accumulatedMs = 0;
+    }
+    saveState();
+    return true;
+  }
+  /* 加时 */
+  function extendTable(t) {
+    var body =
+      '<div class="field"><label for="extMin">增加时长（分钟）</label>' +
+      '<input type="number" id="extMin" value="30" min="5" step="5">' +
+      '<p class="hint">当前剩余 ' + (t.expectedMinutes > 0 ? msToHMS(tableRuntime(t).remainingMs) : "开放计时") + "。加时将叠加到固定时长上。</p></div>";
+    var footer = '<button type="button" class="btn" data-act="cancel">取消</button><button type="button" class="btn btn-primary" data-act="ok">确定</button>';
+    openDialog("加时", body, footer);
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (act === "cancel") { closeDialog(); return; }
+      if (act === "ok") {
+        var min = parseInt($("#extMin").value, 10) || 0;
+        if (min < 5) { showToast("加时不能少于 5 分钟", "error"); return; }
+        t.expectedMinutes += min;
+        saveState();
+        closeDialog();
+        openRunningDialog(t);
+        showToast("已加时 " + min + " 分钟", "success");
+      }
+    };
+  }
+  /* 换套餐：只换支付方式/套餐名头，计时与已用时长完全保留 */
+  function repackageTable(t) {
+    var rt = tableRuntime(t);
+    var body =
+      '<div class="bill-section"><h4>当前</h4>' +
+      '<div class="bill-row"><span>支付/套餐</span><span>' + esc((t.payment || "—") + " " + (t.packageName || "—")) + "</span></div>" +
+      '<div class="bill-row"><span>已用时长</span><span>' + msToHMS(rt.elapsedMs) + "</span></div>" +
+      (t.expectedMinutes > 0
+        ? '<div class="bill-row"><span>' + (rt.overtime ? "已超时" : "剩余") + "</span><span>" + msToHMS(Math.abs(rt.remainingMs)) + "</span></div>"
+        : "") + "</div>" +
+      '<div class="row-2">' +
+      '<div class="field"><label for="rpPayment">支付方式</label>' +
+      '<select id="rpPayment">' + PAYMENTS.map(function (p) {
+        return '<option value="' + p + '"' + (p === t.payment ? " selected" : "") + ">" + p + "</option>";
+      }).join("") + "</select></div>" +
+      '<div class="field"><label for="rpPackage">套餐</label><select id="rpPackage"></select></div></div>' +
+      '<p class="hint">换套餐只更换名头，顾客已用的时间和计时完全保留。要加减时长请用「加时」。</p>';
+    var footer = '<button type="button" class="btn" data-act="back">返回</button><button type="button" class="btn btn-primary" data-act="ok">确认更换</button>';
+    openDialog("更换套餐", body, footer);
+
+    var paySel = $("#rpPayment"), pkgSel = $("#rpPackage");
+    function fillPackages() {
+      var pkgs = PACKAGES[paySel.value] || [];
+      pkgSel.innerHTML = pkgs.map(function (p) {
+        return '<option value="' + esc(p) + '"' + (p === t.packageName ? " selected" : "") + ">" + esc(p) + "</option>";
+      }).join("");
+    }
+    paySel.onchange = fillPackages;
+    fillPackages();
+
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (act === "back") { openRunningDialog(t); return; }
+      if (act === "ok") {
+        t.payment = paySel.value;
+        t.packageName = pkgSel.value;
+        saveState();
+        closeDialog();
+        openRunningDialog(t);
+        showToast("已更换为「" + t.packageName + "」，计时不变", "success");
+      }
+    };
+  }
+  /* 结束使用 */
+  function checkoutTable(t) {
+    var rt = tableRuntime(t);
+    var body =
+      '<div class="bill-section"><h4>使用记录 · ' + esc(tableLabel(t.areaId, t.number)) + "</h4>" +
+      '<div class="bill-row"><span>支付/套餐</span><span>' + esc((t.payment || "—") + " " + (t.packageName || "—")) + "</span></div>" +
+      '<div class="bill-row"><span>使用时长</span><span>' + msToHMS(rt.elapsedMs) + "</span></div>" +
+      (t.expectedMinutes > 0
+        ? '<div class="bill-row"><span>' + (rt.overtime ? "已超时" : "剩余") + "</span><span>" + msToHMS(Math.abs(rt.remainingMs)) + "</span></div>"
+        : "") + "</div>" +
+      '<div class="field" style="margin-top:14px"><label for="coNotes">备注</label>' +
+      '<input type="text" id="coNotes" value="' + esc(t.notes) + '"></div>';
+    var footer = '<button type="button" class="btn" data-act="back">返回</button><button type="button" class="btn btn-success" data-act="confirm">确认结束</button>';
+    openDialog("结束使用", body, footer);
+
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (act === "back") { openRunningDialog(t); return; }
+      if (act === "confirm") {
+        var notes = $("#coNotes").value.trim();
+        state.seq.sales = (state.seq.sales || 0) + 1;
+        state.sales.push({
+          id: "S" + Date.now(),
+          seq: state.seq.sales,
+          date: todayStr(),
+          time: nowStr().slice(0, 5),
+          timestamp: Date.now(),
+          tableId: t.id,
+          tableLabel: tableLabel(t.areaId, t.number),
+          areaId: t.areaId,
+          payment: t.payment || "", packageName: t.packageName || "",
+          people: t.people || 0,
+          durationMs: rt.elapsedMs,
+          durationText: msToHMS(rt.elapsedMs),
+          notes: notes
+        });
+        resetTable(t);
+        saveState();
+        closeDialog();
+        renderDashboard();
+        if (currentView === "sales") { renderSales(); }
+        showToast("已结束，记录已生成", "success");
+      }
+    };
+  }
+
+  /* ============ 视图二：使用记录 ============ */
+  function renderSales() {
+    var dateF = $("#salesDateFilter").value || todayStr();
+    $("#salesDateFilter").value = dateF;
+    var daySales = state.sales.filter(function (s) { return s.date === dateF; })
+      .sort(function (a, b) { return a.timestamp - b.timestamp; });
+
+    var tableSet = {};
+    daySales.forEach(function (r) { tableSet[r.tableId] = true; });
+    var tables = Object.keys(tableSet).length;
+    var totalPeople = daySales.reduce(function (sum, r) { return sum + (r.people || 0); }, 0);
+
+    $("#salesSummary").innerHTML =
+      '<div class="sum-card"><div class="label">开台数</div><div class="value">' + tables + "</div></div>" +
+      '<div class="sum-card"><div class="label">记录数</div><div class="value">' + daySales.length + "</div></div>" +
+      '<div class="sum-card"><div class="label">客流（人）</div><div class="value">' + totalPeople + "</div></div>";
+
+    var tbody = $("#salesTbody");
+    tbody.innerHTML = daySales.length ? daySales.map(function (r, i) {
+      return "<tr>" +
+        '<td class="num">' + (i + 1) + "</td>" +
+        '<td class="num">' + esc(r.time) + "</td>" +
+        "<td>" + esc(r.tableLabel) + "</td>" +
+        "<td>" + esc((r.payment || "—") + " " + (r.packageName || "")) + "</td>" +
+        '<td class="num">' + esc(r.durationText) + "</td>" +
+        '<td class="num">' + (r.people || 0) + "</td>" +
+        '<td class="muted">' + esc(r.notes || "—") + "</td>" +
+        "</tr>";
+    }).join("") : '<tr class="empty-row"><td colspan="7">该日期暂无使用记录</td></tr>';
+  }
+
+  /* ============ 视图三：储存管理 ============ */
+  function renderStorage() {
+    var f = $("#storageFilter").value || "all";
+    var list = state.storage.slice().sort(function (a, b) { return b.storeTs - a.storeTs; });
+    if (f === "stored") { list = list.filter(function (r) { return r.status === "stored"; }); }
+    else if (f === "picked") { list = list.filter(function (r) { return r.status === "picked"; }); }
+    var today = new Date();
+    var tbody = $("#storageTbody");
+    tbody.innerHTML = list.length ? list.map(function (r, i) {
+      var days = daysBetween(parseDate(r.storeDate), today);
+      var overdue = r.status === "stored" && r.pickupDate && parseDate(r.pickupDate) < today;
+      var badge = r.status === "picked"
+        ? '<span class="status-badge picked">已取走</span>'
+        : overdue
+          ? '<span class="status-badge overdue">逾期（' + days + "天）</span>"
+          : '<span class="status-badge stored">储存中（' + days + "天）</span>";
+      return "<tr>" +
+        '<td class="num">' + (i + 1) + "</td>" +
+        "<td>" + esc(r.customer || "—") + "</td>" +
+        "<td>" + esc(r.phone || "—") + "</td>" +
+        "<td>" + esc(r.workName || "—") + "</td>" +
+        '<td class="num">' + esc(r.storeDate || "—") + "</td>" +
+        '<td class="num">' + esc(r.pickupDate || "—") + "</td>" +
+        '<td class="num">' + days + "</td>" +
+        "<td>" + badge + "</td>" +
+        '<td class="muted">' + esc(r.notes || "—") + "</td>" +
+        '<td><div class="action-btns">' +
+        (r.status === "stored" ? '<button type="button" class="btn btn-sm btn-success" data-act="pick" data-id="' + r.id + '">取走</button>' : "") +
+        '<button type="button" class="btn btn-sm" data-act="edit" data-id="' + r.id + '">编辑</button>' +
+        '<button type="button" class="btn btn-sm btn-danger" data-act="del" data-id="' + r.id + '">删</button>' +
+        "</div></td></tr>";
+    }).join("") : '<tr class="empty-row"><td colspan="10">暂无储存记录</td></tr>';
+
+    Array.prototype.forEach.call(tbody.querySelectorAll(".action-btns .btn"), function (b) {
+      b.addEventListener("click", function () {
+        var id = b.dataset.id, act = b.dataset.act;
+        var rec = null;
+        state.storage.forEach(function (r) { if (r.id === id) { rec = r; } });
+        if (!rec) { return; }
+        if (act === "pick") {
+          rec.status = "picked"; rec.pickTs = Date.now();
+          saveState(); renderStorage(); updateBadges();
+          showToast("已标记取走", "success");
+        } else if (act === "edit") {
+          storageDialog(rec);
+        } else if (act === "del") {
+          confirmDialog("删除储存记录？", "确认删除该条储存记录？此操作不可撤销。", function () {
+            state.storage = state.storage.filter(function (r) { return r.id !== id; });
+            saveState(); renderStorage(); updateBadges();
+            showToast("已删除", "success");
+          });
+        }
+      });
+    });
+  }
+  function storageDialog(rec) {
+    var isNew = !rec;
+    rec = rec || {
+      id: "R" + Date.now(), customer: "", phone: "", workName: "",
+      storeDate: todayStr(), pickupDate: "", notes: "", status: "stored", storeTs: Date.now()
+    };
+    var body =
+      '<div class="row-2" style="margin-top:0">' +
+      '<div class="field"><label for="srCustomer">顾客姓名</label><input type="text" id="srCustomer" value="' + esc(rec.customer) + '"></div>' +
+      '<div class="field"><label for="srPhone">联系电话</label><input type="text" id="srPhone" value="' + esc(rec.phone) + '"></div></div>' +
+      '<div class="field"><label for="srWork">作品名称/描述</label><input type="text" id="srWork" value="' + esc(rec.workName) + '" placeholder="如：彩虹猫 8x8"></div>' +
+      '<div class="row-2">' +
+      '<div class="field"><label for="srStore">储存日期</label><input type="date" id="srStore" value="' + esc(rec.storeDate) + '"></div>' +
+      '<div class="field"><label for="srPick">预计取走日期</label><input type="date" id="srPick" value="' + esc(rec.pickupDate || "") + '"></div></div>' +
+      '<div class="field"><label for="srNotes">备注</label><textarea id="srNotes">' + esc(rec.notes) + "</textarea></div>";
+    var footer = '<button type="button" class="btn" data-act="cancel">取消</button><button type="button" class="btn btn-success" data-act="save">保存</button>';
+    openDialog(isNew ? "新增储存记录" : "编辑储存记录", body, footer);
+
+    dlgFoot.onclick = function (e) {
+      var act = e.target && e.target.dataset ? e.target.dataset.act : "";
+      if (act === "cancel") { closeDialog(); return; }
+      if (act === "save") {
+        rec.customer = $("#srCustomer").value.trim();
+        rec.phone = $("#srPhone").value.trim();
+        rec.workName = $("#srWork").value.trim();
+        rec.storeDate = $("#srStore").value || todayStr();
+        rec.pickupDate = $("#srPick").value;
+        rec.notes = $("#srNotes").value.trim();
+        if (isNew) { state.storage.push(rec); }
+        saveState();
+        closeDialog();
+        renderStorage();
+        updateBadges();
+        showToast("已保存", "success");
+      }
+    };
+  }
+
+  /* ============ 视图四：系统设置 ============ */
+  function renderSettings() {
+    var s = state.settings;
+    $("#setShopName").value = s.shopName;
+    $("#setDefaultDuration").value = s.defaultDuration;
+    $("#setOvertimeWarn").value = s.overtimeWarn;
+    $("#setVoiceAlert").checked = !!s.voiceAlert;
+    $("#setModalSize").value = MODAL_SIZES[s.modalSize] ? s.modalSize : "standard";
+    $("#setCardSize").value = CARD_SIZES.indexOf(s.cardSize) > -1 ? s.cardSize : "compact";
+    $("#colorIdle").value = s.colors.idle;
+    $("#colorRunning").value = s.colors.running;
+    $("#colorPaused").value = s.colors.paused;
+    $("#colorOvertime").value = s.colors.overtime;
+    $("#wpMode").value = s.wallpaperMode || "off";
+    $("#wpOverlay").value = (s.wallpaperOverlay == null ? DEFAULTS.wallpaperOverlay : s.wallpaperOverlay);
+    $("#wpOverlayVal").textContent = (s.wallpaperOverlay == null ? DEFAULTS.wallpaperOverlay : s.wallpaperOverlay) + "%";
+    renderWallpaperPreview();
+    renderAreaManager();
+  }
+  function renderAreaManager() {
+    var mgr = $("#areaManager");
+    mgr.innerHTML = state.settings.areas.map(function (a, idx) {
+      return '<div class="area-row" data-idx="' + idx + '">' +
+        '<input type="text" class="area-input" data-field="name" value="' + esc(a.name) + '" placeholder="区域名" aria-label="区域名">' +
+        '<input type="text" class="tables-input" data-field="tables" value="' + esc(a.tables.join(",")) + '" placeholder="桌号，逗号分隔，如 1,2,3" aria-label="桌号列表">' +
+        '<button type="button" class="btn btn-sm btn-danger" data-act="del-area">删除区域</button></div>';
+    }).join("") || '<p class="area-empty">暂无区域，点击右上角「+ 添加区域」</p>';
+
+    Array.prototype.forEach.call(mgr.querySelectorAll(".area-row"), function (row) {
+      var idx = parseInt(row.dataset.idx, 10);
+      Array.prototype.forEach.call(row.querySelectorAll("input"), function (inp) {
+        inp.addEventListener("change", function () {
+          var f = inp.dataset.field;
+          var a = state.settings.areas[idx];
+          if (!a) { return; }
+          if (f === "name") {
+            a.name = inp.value.trim() || (a.id + "区");
+          } else if (f === "tables") {
+            a.tables = inp.value.split(",").map(function (x) { return parseInt(x.trim(), 10); })
+              .filter(function (n) { return isFinite(n) && n > 0; });
+            a.tables = Array.from(new Set(a.tables)).sort(function (x, y) { return x - y; });
+            inp.value = a.tables.join(",");
+          }
+          syncTables();
+          saveState();
+          renderDashboard();
+        });
+      });
+      var delBtn = row.querySelector('[data-act="del-area"]');
+      delBtn.addEventListener("click", function () {
+        confirmDialog("删除区域？",
+          "将删除「" + state.settings.areas[idx].name + "」及其桌台。若桌台在使用中则保留运行态直到结束。",
+          function () {
+            state.settings.areas.splice(idx, 1);
+            syncTables();
+            saveState();
+            renderAreaManager();
+            renderDashboard();
+            showToast("已删除区域", "success");
+          });
+      });
+    });
+  }
+  function bindSettingsEvents() {
+    $("#setShopName").addEventListener("change", function (e) {
+      state.settings.shopName = e.target.value.trim() || "拼豆工坊";
+      updateShopName();
+      saveState();
+    });
+    $("#setDefaultDuration").addEventListener("change", function (e) {
+      state.settings.defaultDuration = parseInt(e.target.value, 10) || 0;
+      saveState();
+    });
+    $("#setOvertimeWarn").addEventListener("change", function (e) {
+      state.settings.overtimeWarn = parseInt(e.target.value, 10) || 0;
+      saveState();
+      renderDashboard();
+    });
+    $("#setVoiceAlert").addEventListener("change", function (e) {
+      state.settings.voiceAlert = !!e.target.checked;
+      saveState();
+    });
+    $("#setModalSize").addEventListener("change", function (e) {
+      state.settings.modalSize = MODAL_SIZES[e.target.value] ? e.target.value : "standard";
+      applyModalSize();
+      saveState();
+      showToast("弹窗大小已保存", "success");
+    });
+    $("#setCardSize").addEventListener("change", function (e) {
+      state.settings.cardSize = CARD_SIZES.indexOf(e.target.value) > -1 ? e.target.value : "compact";
+      applyCardSize();
+      saveState();
+      renderDashboard();
+      showToast("卡片大小已保存", "success");
+    });
+    var onColor = function () {
+      state.settings.colors = {
+        idle: $("#colorIdle").value,
+        running: $("#colorRunning").value,
+        paused: $("#colorPaused").value,
+        overtime: $("#colorOvertime").value
+      };
+      applyColors();
+      saveState();
+      renderDashboard();
+    };
+    ["colorIdle", "colorRunning", "colorPaused", "colorOvertime"].forEach(function (id) {
+      $("#" + id).addEventListener("input", onColor);
+    });
+    $("#resetColors").addEventListener("click", function () {
+      state.settings.colors = JSON.parse(JSON.stringify(DEFAULTS.colors));
+      applyColors();
+      saveState();
+      renderSettings();
+      renderDashboard();
+      showToast("已恢复默认配色", "success");
+    });
+    // 壁纸
+    $("#wpFileInput").addEventListener("change", function (e) {
+      var files = e.target.files;
+      if (files && files.length) { addWallpaperFiles(files); }
+      e.target.value = "";
+    });
+    $("#wpShuffle").addEventListener("click", function () {
+      var n = pickRandomWallpaper();
+      if (!n) { showToast("请先上传至少 2 张壁纸", "error"); return; }
+      setActiveWallpaper(n.id);
+      showToast("已随机换一张", "success");
+    });
+    $("#wpMode").addEventListener("change", function (e) {
+      state.settings.wallpaperMode = e.target.value || "off";
+      state.settings.wpLastRotateTs = 0;
+      saveState();
+      showToast("轮播设置已保存", "success");
+    });
+    $("#wpOverlay").addEventListener("input", function (e) {
+      var v = parseInt(e.target.value, 10) || 0;
+      state.settings.wallpaperOverlay = v;
+      $("#wpOverlayVal").textContent = v + "%";
+      saveState();
+      applyWallpaper();
+    });
+    $("#wpReset").addEventListener("click", function () {
+      confirmDialog("恢复默认壁纸？", "将清空你上传的全部壁纸并切回系统默认。此操作不会删除你本地原图。", resetWallpaper);
+    });
+    $("#addArea").addEventListener("click", function () {
+      var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      var used = state.settings.areas.map(function (a) { return a.id; });
+      var nextId = null;
+      for (var i = 0; i < letters.length; i++) {
+        if (used.indexOf(letters[i]) === -1) { nextId = letters[i]; break; }
+      }
+      if (!nextId) { nextId = "X" + state.settings.areas.length; }
+      state.settings.areas.push({ id: nextId, name: nextId + "区", tables: [1, 2, 3] });
+      syncTables();
+      saveState();
+      renderAreaManager();
+      renderDashboard();
+      showToast("已添加 " + nextId + "区", "success");
+    });
+    // 数据管理
+    $("#exportData").addEventListener("click", function () {
+      var data = JSON.stringify(state, null, 2);
+      var blob = new Blob([data], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "拼豆系统备份_" + todayStr() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      showToast("已导出备份", "success");
+    });
+    $("#importData").addEventListener("click", function () { $("#importFile").click(); });
+    $("#importFile").addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) { return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var data = JSON.parse(reader.result);
+          state = Object.assign(loadState(), data);
+          state.settings = Object.assign({}, DEFAULTS, state.settings || {});
+          state.settings.colors = Object.assign({}, DEFAULTS.colors, (state.settings || {}).colors || {});
+          applyColors(); applyModalSize(); applyCardSize(); syncTables(); saveState();
+          updateShopName();
+          renderSettings(); renderDashboard();
+          showToast("导入成功", "success");
+        } catch (err) {
+          showToast("导入失败：文件格式错误", "error");
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = "";
+    });
+    $("#clearToday").addEventListener("click", function () {
+      confirmDialog("清空今日数据？", "将删除今日所有使用记录。储存记录不受影响。此操作不可撤销。", function () {
+        var today = todayStr();
+        state.sales = state.sales.filter(function (s) { return s.date !== today; });
+        saveState();
+        renderSales();
+        updateBadges();
+        showToast("已清空今日记录", "success");
+      });
+    });
+    $("#clearAll").addEventListener("click", function () {
+      confirmDialog("清空全部数据？！", "将删除所有使用记录、储存记录，并重置所有桌台。仅保留店铺设置。此操作不可撤销！请确保已导出备份。", function () {
+        state.sales = []; state.storage = []; state.seq = { sales: 0, storage: 0 };
+        state.tables.forEach(resetTable);
+        saveState();
+        renderSales(); renderStorage(); renderDashboard();
+        showToast("已清空全部数据", "success");
+      });
+    });
+  }
+
+  /* ============ 视图切换 ============ */
+  function switchView(name) {
+    currentView = name;
+    Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function (b) {
+      var on = b.dataset.view === name;
+      b.classList.toggle("is-active", on);
+      if (on) { b.setAttribute("aria-current", "true"); } else { b.removeAttribute("aria-current"); }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".view"), function (v) {
+      v.hidden = v.id !== "view-" + name;
+    });
+    if (name === "dashboard") { renderDashboard(); }
+    else if (name === "sales") { renderSales(); }
+    else if (name === "storage") { renderStorage(); }
+    else if (name === "settings") { renderSettings(); }
+  }
+
+  /* ============ 初始化 ============ */
+  function init() {
+    syncTables();
+    applyColors();
+    applyModalSize();
+    applyCardSize();
+    updateShopName();
+    rotateWallpaperIfNeeded();
+    applyWallpaper();
+    $("#salesDateFilter").value = todayStr();
+    bindSettingsEvents();
+
+    Array.prototype.forEach.call(document.querySelectorAll(".nav-item"), function (b) {
+      b.addEventListener("click", function () { switchView(b.dataset.view); });
+    });
+    areaFilter.addEventListener("change", renderDashboard);
+    statusFilter.addEventListener("change", renderDashboard);
+    Array.prototype.forEach.call(document.querySelectorAll(".stat"), function (b) {
+      b.addEventListener("click", function () {
+        statusFilter.value = b.dataset.stat;
+        renderDashboard();
+      });
+    });
+    // 桌台卡片点击（事件委托，整树重渲后依然有效）
+    board.addEventListener("click", function (e) {
+      var goto = e.target.closest ? e.target.closest("[data-goto]") : null;
+      if (goto) { switchView(goto.dataset.goto); return; }
+      var card = e.target.closest ? e.target.closest(".table-card") : null;
+      if (card) { openTableAction(card.dataset.id); }
+    });
+    $("#salesDateFilter").addEventListener("change", renderSales);
+    $("#salesPrevDay").addEventListener("click", function () { shiftSalesDate(-1); });
+    $("#salesNextDay").addEventListener("click", function () { shiftSalesDate(1); });
+    $("#salesToday").addEventListener("click", function () {
+      $("#salesDateFilter").value = todayStr();
+      renderSales();
+    });
+    $("#addStorage").addEventListener("click", function () { storageDialog(null); });
+    $("#storageFilter").addEventListener("change", renderStorage);
+
+    switchView("dashboard");
+    startTick();
+    setInterval(function () { rotateWallpaperIfNeeded(); applyWallpaper(); }, 30000);
+  }
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>

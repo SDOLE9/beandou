@@ -1,8 +1,8 @@
 {
   "name": "beandou",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "拼豆手工工坊桌台计时管理系统：网页版（PWA，可离线安装）+ 微信小程序版，零依赖、零构建",
+  "description": "拼豆手工工坊桌台计时管理系统：手机端（PWA，可离线安装）+ 电脑端专用液态玻璃版 + 微信小程序版，零依赖、零构建",
   "license": "MIT",
   "keywords": [
     "拼豆",

@@ -1,14 +1,12 @@
 /* 拼豆计时管理系统 - Service Worker（离线缓存）
-   使主页 / v4 界面可安装、离线可用 */
-const CACHE = 'pdb-cache-v3';
+   使主界面可安装、离线可用 */
+const CACHE = 'pdb-cache-v4';
 const CORE = [
   './',
   './index.html',
-  './index-v4.html',
-  './styles.css',
-  './styles-v4.css',
-  './app.js',
-  './icon.jpg'
+  './assets/styles.css',
+  './assets/app.js',
+  './assets/icon.jpg'
 ];
 
 self.addEventListener('install', (e) => {
